@@ -1,0 +1,33 @@
+# Example workflow that ships with the code-review template. It lands in your
+# repo when you adopt the template and drives the pr-patrol command on PR events
+# (and hourly). It runs the command directly with Bun, so it needs no ori CLI.
+#
+# This file does not run in the examples repo's own CI — GitHub only executes
+# workflows under the repository-root .github/workflows/.
+name: pr-patrol
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+  schedule:
+    - cron: "0 * * * *"
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  patrol:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+
+      - name: Patrol open PRs
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: bun features/pr-patrol/cmd.ts --repo "${{ github.repository }}"

@@ -1,0 +1,5 @@
+{
+  "name": "@ori-monorepo/search-pr",
+  "private": true,
+  "type": "module"
+}

@@ -1,0 +1,5 @@
+{
+  "name": "@ori-monorepo/system",
+  "private": true,
+  "type": "module"
+}

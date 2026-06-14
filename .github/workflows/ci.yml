@@ -1,0 +1,102 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.event_name }}-${{ github.head_ref || github.ref_name }}
+  cancel-in-progress: true
+
+# Each top-level directory with a package.json is a persona template (its own
+# Bun workspace). Mirrors the ori lint/typecheck/test setup, run per template.
+jobs:
+  lint:
+    name: lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: "1.3.13"
+
+      - name: Run lint
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          for dir in */; do
+            [ -f "${dir}package.json" ] || continue
+            echo "::group::${dir%/}"
+            (cd "$dir" && bun install && bun run check)
+            echo "::endgroup::"
+          done
+
+      - name: Lint PR title
+        if: github.event_name == 'pull_request'
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+        run: |
+          bun install
+          printf '%s\n' "$PR_TITLE" | bun run commitlint
+
+  typecheck:
+    name: typecheck
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: "1.3.13"
+
+      - name: Run typecheck
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          for dir in */; do
+            [ -f "${dir}package.json" ] || continue
+            echo "::group::${dir%/}"
+            (cd "$dir" && bun install && bun run typecheck)
+            echo "::endgroup::"
+          done
+
+  test:
+    name: test
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: "1.3.13"
+
+      - name: Run tests
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          for dir in */; do
+            [ -f "${dir}package.json" ] || continue
+            echo "::group::${dir%/}"
+            if find "$dir" -path "${dir}node_modules" -prune -o \
+              \( -name '*.test.ts' -o -name '*.test.tsx' \) -print | grep -q .; then
+              (cd "$dir" && bun install && bun run test)
+            else
+              echo "no tests in ${dir%/}, skipping"
+            fi
+            echo "::endgroup::"
+          done

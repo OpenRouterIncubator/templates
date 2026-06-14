@@ -1,0 +1,8 @@
+{
+  "dependencies": {
+    "@ori-monorepo/brief": "workspace:*"
+  },
+  "name": "@ori-monorepo/draft",
+  "private": true,
+  "type": "module"
+}

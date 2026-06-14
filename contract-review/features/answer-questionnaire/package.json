@@ -1,0 +1,8 @@
+{
+  "dependencies": {
+    "@ori-monorepo/review-contract": "workspace:*"
+  },
+  "name": "@ori-monorepo/answer-questionnaire",
+  "private": true,
+  "type": "module"
+}

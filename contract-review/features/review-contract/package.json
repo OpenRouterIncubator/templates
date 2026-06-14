@@ -1,0 +1,5 @@
+{
+  "name": "@ori-monorepo/review-contract",
+  "private": true,
+  "type": "module"
+}

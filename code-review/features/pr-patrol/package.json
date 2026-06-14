@@ -1,0 +1,5 @@
+{
+  "name": "@ori-monorepo/pr-patrol",
+  "private": true,
+  "type": "module"
+}
