@@ -3,8 +3,16 @@ import { describe, expect, it } from "bun:test";
 import { parseTarget } from "./target.ts";
 
 describe("parseTarget", () => {
-  it("selects local review when there is no PR reference", () => {
+  it("reviews the local diff when the prompt opens with a review verb", () => {
     expect(parseTarget("review my staged changes")).toEqual({ mode: "local" });
+    expect(parseTarget("audit this function")).toEqual({ mode: "local" });
+  });
+
+  it("treats a non-review prompt as a chat turn", () => {
+    expect(parseTarget("how should I structure this module?")).toEqual({
+      mode: "chat",
+    });
+    expect(parseTarget("what does this regex do?")).toEqual({ mode: "chat" });
   });
 
   it("posts by default for a PR reference", () => {

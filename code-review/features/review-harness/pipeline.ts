@@ -3,6 +3,7 @@
 // ensemble of models -> vote/rank the merged findings -> stream a verdict, and
 // (opt-in) post a GitHub review. Kept free of Ori types; `events.ts` projects
 // the emitted pipeline events onto the runtime contract.
+import { streamChat } from "./chat.ts";
 import type { HarnessInvokeOptions } from "./contract.ts";
 import { type ChangedFile, hunkIndex } from "./diff.ts";
 import { buildDimensionPrompt, DIMENSIONS, renderDiff } from "./dimensions.ts";
@@ -52,6 +53,11 @@ export async function* runReview(
   }
 
   const target = parseTarget(options.prompt);
+  if (target.mode === "chat") {
+    yield* runChat(options, env, apiKey);
+    return;
+  }
+
   // Only resolve a token for PR mode, and try gh/git before giving up, so local
   // review never shells out and PR review works for already-signed-in users.
   const token =
@@ -128,6 +134,31 @@ export async function* runReview(
   }
 
   yield { kind: "ended", ok: true };
+}
+
+// Non-review prompts: stream a normal assistant reply, honoring the persona
+// system prompt, so the intern stays conversational instead of forcing a review.
+async function* runChat(
+  options: HarnessInvokeOptions,
+  env: Record<string, string | undefined>,
+  apiKey: string
+): AsyncGenerator<PipelineEvent> {
+  const model = resolveModels(env, options.model)[0] ?? DEFAULT_MODELS[0];
+  try {
+    for await (const delta of streamChat({
+      apiKey,
+      model,
+      prompt: options.prompt,
+      system: options.systemPrompt,
+      temperature: options.temperature,
+    })) {
+      yield { kind: "chat", text: delta };
+    }
+    yield { kind: "ended", ok: true };
+  } catch (cause) {
+    yield { kind: "error", message: messageOf(cause) };
+    yield { error: messageOf(cause), kind: "ended", ok: false };
+  }
 }
 
 // Fan the review dimensions out, each across the model ensemble, streaming

@@ -1,22 +1,28 @@
 ---
 name: review-harness
-description: The intern's agent runtime — a multi-stage code reviewer that streams findings live. Reference for how it decides what to review and how to configure it.
+description: The intern's adaptive agent runtime — chats by default and runs a multi-stage code review on request. Reference for how it routes prompts and how to configure it.
 ---
 
 # Review Harness
 
-This feature replaces the intern's generic agent runtime with a purpose-built
-code reviewer. Whatever you type in `ori dev` becomes a review request; the
-harness fans the diff out across review dimensions, runs each across an ensemble
-of models, votes to keep only corroborated findings, and streams a verdict.
+This feature is the intern's agent runtime. It is **adaptive**: it chats
+normally by default, and switches into a purpose-built code reviewer when you
+ask for a review. Reviews fan the diff out across dimensions, run each across an
+ensemble of models, vote to keep only corroborated findings, and stream a
+verdict.
 
-## What it reviews (the prompt decides)
+## What it does (the prompt decides)
 
-- A pull-request reference anywhere in the prompt (`owner/repo#123` or a PR URL)
-  → reviews that PR's diff (needs `GITHUB_TOKEN`).
-- Anything else → reviews the **local working diff** (`git diff` in the
-  workspace; falls back to the last commit when the tree is clean). No token
-  needed.
+- A **pull-request reference** (`owner/repo#123` or a PR URL) → reviews that PR's
+  diff and (by default) posts the review. Needs a GitHub token.
+- A prompt that **opens with a review verb** — `review`, `audit`, `critique`,
+  `code review` (e.g. `review my changes`) → reviews the **local working diff**
+  (`git diff`; falls back to the last commit when the tree is clean). No token.
+- **Anything else** → a normal **chat** turn: a streamed assistant reply that
+  honors the persona system prompt (so `system/prompt.md` and skills apply).
+
+So `review my staged changes` runs a review, while `how should I structure this
+module?` just answers.
 
 ## PR mode posts automatically
 
@@ -39,8 +45,9 @@ otherwise it is demoted as low-confidence. Voting is the false-positive filter.
 
 ## Configuration (environment)
 
-- `OPENROUTER_API_KEY` — required.
-- `GITHUB_TOKEN` / `GH_TOKEN` — required only for PR mode.
+- `OPENROUTER_API_KEY` — required (chat and review).
+- `GITHUB_TOKEN` / `GH_TOKEN` — for PR mode; falls back to `gh auth token` then
+  the git credential helper, so signed-in users need not set it.
 - `REVIEW_MODELS` — comma-separated model list (overrides the default ensemble).
 - `REVIEW_MODEL` / `REVIEW_MODEL_SECONDARY` — set the primary / secondary model.
 

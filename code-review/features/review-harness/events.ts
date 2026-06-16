@@ -34,6 +34,7 @@ export type PipelineEvent =
     }
   | { readonly kind: "finding"; readonly finding: RankedFinding }
   | { readonly kind: "report"; readonly markdown: string }
+  | { readonly kind: "chat"; readonly text: string }
   | {
       readonly kind: "error";
       readonly detail?: unknown;
@@ -86,6 +87,11 @@ export function toRuntimeEvent(event: PipelineEvent): AgentRuntimeEvent {
     case "report":
       return {
         payload: { delta: event.markdown, streamKind: STREAM.Assistant },
+        type: EVENT.ContentDelta,
+      };
+    case "chat":
+      return {
+        payload: { delta: event.text, streamKind: STREAM.Assistant },
         type: EVENT.ContentDelta,
       };
     case "error":
