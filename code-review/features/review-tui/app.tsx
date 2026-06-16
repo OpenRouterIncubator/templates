@@ -233,7 +233,9 @@ export const App = ({ chat }: { chat: ChatRuntime }) => {
       state = reduce(state, event);
       setActive(state);
     }
-    setHistory((prev) => [...prev, state]);
+    // The stream closing IS the end of the turn — Ori may not deliver a
+    // session.ended to the chat, so finalize here to clear the status line.
+    setHistory((prev) => [...prev, { ...state, done: true }]);
     setActive(undefined);
     setBusy(false);
   };
