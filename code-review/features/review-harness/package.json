@@ -1,0 +1,5 @@
+{
+  "name": "@ori-monorepo/review-harness",
+  "private": true,
+  "type": "module"
+}
