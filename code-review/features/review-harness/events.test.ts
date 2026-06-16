@@ -28,6 +28,27 @@ describe("toRuntimeEvent", () => {
     });
   });
 
+  it("completes a dimension with a candidate count", () => {
+    expect(
+      toRuntimeEvent({ count: 2, kind: "dimension-done", title: "Tests" })
+    ).toMatchObject({
+      payload: {
+        detail: "2 candidate finding(s)",
+        itemType: DIMENSION_ITEM,
+        status: ITEM_STATUS.Completed,
+        title: "Tests",
+      },
+      type: EVENT.ItemCompleted,
+    });
+  });
+
+  it("maps a chat delta to assistant text", () => {
+    expect(toRuntimeEvent({ kind: "chat", text: "hello" })).toMatchObject({
+      payload: { delta: "hello", streamKind: STREAM.Assistant },
+      type: EVENT.ContentDelta,
+    });
+  });
+
   it("opens a dimension as an in-progress item", () => {
     const event = toRuntimeEvent({
       kind: "dimension-start",

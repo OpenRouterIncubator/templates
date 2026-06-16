@@ -5,8 +5,9 @@ import {
   type RuntimeEvent,
   reduce,
   reduceAll,
+  renderPlain,
   severityColor,
-} from "./app.tsx";
+} from "./view.ts";
 
 const SEQUENCE: readonly RuntimeEvent[] = [
   {
@@ -101,5 +102,23 @@ describe("severityColor", () => {
   it("colors must-fix red and suggestions yellow", () => {
     expect(severityColor("must-fix")).toBe("red");
     expect(severityColor("suggestion")).toBe("yellow");
+  });
+});
+
+describe("renderPlain", () => {
+  it("renders findings, an error, and the report as plain text", () => {
+    const text = renderPlain({
+      dimensions: [],
+      done: true,
+      error: "boom",
+      findings: [
+        { body: "fix it", severity: "must-fix", title: "[must-fix] a.ts:1" },
+      ],
+      report: "## done",
+      status: undefined,
+    });
+    expect(text).toContain("! [must-fix] a.ts:1");
+    expect(text).toContain("error: boom");
+    expect(text).toContain("## done");
   });
 });

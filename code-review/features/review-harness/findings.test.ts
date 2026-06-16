@@ -99,6 +99,27 @@ describe("aggregateFindings", () => {
     expect(result.confirmed).toHaveLength(1);
   });
 
+  it("breaks confidence ties by path", () => {
+    const at = (path: string, model: string): Candidate => ({
+      dimension: "correctness",
+      finding: {
+        body: "same wording everywhere",
+        line: 1,
+        path,
+        severity: "suggestion",
+      },
+      model,
+    });
+    const result = aggregateFindings(
+      [at("b.ts", "m1"), at("b.ts", "m2"), at("a.ts", "m1"), at("a.ts", "m2")],
+      2
+    );
+    expect(result.confirmed.map((finding) => finding.path)).toEqual([
+      "a.ts",
+      "b.ts",
+    ]);
+  });
+
   it("carries a model suggestion through aggregation", () => {
     const candidate: Candidate = {
       dimension: "correctness",

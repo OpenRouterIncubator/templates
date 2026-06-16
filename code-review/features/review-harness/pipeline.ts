@@ -14,7 +14,6 @@ import {
   chooseVerdict,
   type Finding,
 } from "./findings.ts";
-import { collectLocalDiff } from "./gitdiff.ts";
 import {
   createReview,
   fetchPullRequest,
@@ -22,6 +21,7 @@ import {
   listReviewComments,
 } from "./github.ts";
 import { resolveGitHubToken } from "./github-token.ts";
+import { collectLocalDiff } from "./local-diff.ts";
 import { requestFindings } from "./openrouter.ts";
 import {
   getPreferences,

@@ -6,10 +6,8 @@
 import { stdin } from "node:process";
 import { render } from "ink";
 import { createElement } from "react";
-
-import type { ChatRuntime } from "./app.tsx";
-
 import { App, runPiped } from "./app.tsx";
+import type { ChatRuntime } from "./view.ts";
 
 interface ChatContribution {
   readonly name: string;
