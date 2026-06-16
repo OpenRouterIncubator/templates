@@ -15,6 +15,7 @@ import {
 } from "./findings.ts";
 import { collectLocalDiff } from "./gitdiff.ts";
 import { createReview, fetchPullRequest, listChangedFiles } from "./github.ts";
+import { resolveGitHubToken } from "./github-token.ts";
 import { requestFindings } from "./openrouter.ts";
 import { buildReport, buildReviewSubmission, emptyReport } from "./report.ts";
 import { parseTarget, type ReviewTarget } from "./target.ts";
@@ -46,7 +47,10 @@ export async function* runReview(
   }
 
   const target = parseTarget(options.prompt);
-  const token = read(env, "GITHUB_TOKEN") ?? read(env, "GH_TOKEN");
+  // Only resolve a token for PR mode, and try gh/git before giving up, so local
+  // review never shells out and PR review works for already-signed-in users.
+  const token =
+    target.mode === "pr" ? await resolveGitHubToken(env) : undefined;
 
   yield {
     input: describeTarget(target),
@@ -212,7 +216,7 @@ async function resolveDiff(
   if (target.mode === "pr") {
     if (token === undefined) {
       throw new Error(
-        "GITHUB_TOKEN (or GH_TOKEN) is required to review a pull request."
+        "No GitHub token found. Set GITHUB_TOKEN/GH_TOKEN, run `gh auth login`, or configure a git credential helper, then retry."
       );
     }
     const [pr, files] = await Promise.all([
