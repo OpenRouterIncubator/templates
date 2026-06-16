@@ -32,7 +32,9 @@ interface ResolvedDiff {
 export async function* runReview(
   options: HarnessInvokeOptions
 ): AsyncGenerator<PipelineEvent> {
-  const env = options.env ?? {};
+  // Ori keeps secrets out of options.env (like the built-in harness), so merge
+  // the daemon's process env underneath and let options.env override.
+  const env = { ...process.env, ...(options.env ?? {}) };
   const apiKey = read(env, "OPENROUTER_API_KEY");
   if (apiKey === undefined) {
     yield {
