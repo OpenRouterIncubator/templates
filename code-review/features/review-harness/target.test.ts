@@ -1,6 +1,6 @@
 import { describe, expect, it } from "bun:test";
 
-import { parseTarget } from "./target.ts";
+import { parseTarget, resolvePostDecision } from "./target.ts";
 
 describe("parseTarget", () => {
   it("reviews the local diff when the prompt opens with a review verb", () => {
@@ -15,17 +15,31 @@ describe("parseTarget", () => {
     expect(parseTarget("what does this regex do?")).toEqual({ mode: "chat" });
   });
 
-  it("posts by default for a PR reference", () => {
-    const target = parseTarget("please review owner/repo#15 carefully");
-    expect(target).toMatchObject({ mode: "pr", post: true });
+  it("selects PR mode for a PR reference", () => {
+    expect(parseTarget("please review owner/repo#15 carefully")).toMatchObject({
+      mode: "pr",
+      ref: { number: 15, owner: "owner", repo: "repo" },
+    });
+  });
+});
+
+describe("resolvePostDecision", () => {
+  it("follows the session default when there is no cue", () => {
+    expect(resolvePostDecision("review owner/repo#15", true)).toBe(true);
+    expect(resolvePostDecision("review owner/repo#15", false)).toBe(false);
   });
 
-  it("honors an opt-out cue to keep the review report-only", () => {
+  it("lets an opt-out cue override a posting default", () => {
     for (const cue of ["dry run", "no post", "don't post", "preview"]) {
-      expect(parseTarget(`review owner/repo#15 ${cue}`)).toMatchObject({
-        mode: "pr",
-        post: false,
-      });
+      expect(resolvePostDecision(`review owner/repo#15 ${cue}`, true)).toBe(
+        false
+      );
     }
+  });
+
+  it("lets an explicit post cue override a report-only default", () => {
+    expect(resolvePostDecision("review owner/repo#15 and post it", false)).toBe(
+      true
+    );
   });
 });

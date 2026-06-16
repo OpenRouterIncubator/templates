@@ -9,7 +9,6 @@ import { type PullRequestRef, parsePullRequestRef } from "./pr-ref.ts";
 export type ReviewTarget =
   | {
       readonly mode: "pr";
-      readonly post: boolean;
       readonly ref: PullRequestRef;
     }
   | { readonly mode: "local" }
@@ -17,18 +16,34 @@ export type ReviewTarget =
 
 const NO_POST_CUE =
   /\b(?:no[-\s]?post|don'?t\s+post|do\s+not\s+post|dry[-\s]?run|preview)\b/i;
+const POST_CUE = /\bpost\b/i;
 const REVIEW_INTENT = /^\s*\/?(?:review|audit|critique|code[-\s]?review)\b/i;
 const WHITESPACE = /\s+/;
 
 export function parseTarget(prompt: string): ReviewTarget {
   const ref = findRef(prompt);
   if (ref !== null) {
-    return { mode: "pr", post: !NO_POST_CUE.test(prompt), ref };
+    return { mode: "pr", ref };
   }
   if (REVIEW_INTENT.test(prompt)) {
     return { mode: "local" };
   }
   return { mode: "chat" };
+}
+
+// Whether to post this PR review. An explicit one-off cue in the prompt wins;
+// otherwise fall back to the session default (the user's standing preference).
+export function resolvePostDecision(
+  prompt: string,
+  sessionDefault: boolean
+): boolean {
+  if (NO_POST_CUE.test(prompt)) {
+    return false;
+  }
+  if (POST_CUE.test(prompt)) {
+    return true;
+  }
+  return sessionDefault;
 }
 
 // The short "owner/repo#N" form is anchored, so scan each token; the URL form is

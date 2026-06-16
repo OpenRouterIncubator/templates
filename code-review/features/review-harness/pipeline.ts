@@ -23,8 +23,17 @@ import {
 } from "./github.ts";
 import { resolveGitHubToken } from "./github-token.ts";
 import { requestFindings } from "./openrouter.ts";
+import {
+  getPreferences,
+  parsePostingPreference,
+  setPreferences,
+} from "./preferences.ts";
 import { buildReport, buildReviewSubmission, emptyReport } from "./report.ts";
-import { parseTarget, type ReviewTarget } from "./target.ts";
+import {
+  parseTarget,
+  type ReviewTarget,
+  resolvePostDecision,
+} from "./target.ts";
 
 const DEFAULT_MODELS = [
   "anthropic/claude-sonnet-4.5",
@@ -42,6 +51,21 @@ export async function* runReview(
   // Ori keeps secrets out of options.env (like the built-in harness), so merge
   // the daemon's process env underneath and let options.env override.
   const env = { ...process.env, ...(options.env ?? {}) };
+  const sessionId = options.sessionId;
+  const target = parseTarget(options.prompt);
+
+  // Conversational config: set a standing posting preference for the session.
+  // Only when the prompt isn't aimed at a PR — there, "don't post" is a one-off.
+  if (target.mode !== "pr") {
+    const preference = parsePostingPreference(options.prompt);
+    if (preference !== null) {
+      setPreferences(sessionId, { autopost: preference });
+      yield { kind: "chat", text: confirmPosting(preference) };
+      yield { kind: "ended", ok: true };
+      return;
+    }
+  }
+
   const apiKey = read(env, "OPENROUTER_API_KEY");
   if (apiKey === undefined) {
     yield {
@@ -52,7 +76,6 @@ export async function* runReview(
     return;
   }
 
-  const target = parseTarget(options.prompt);
   if (target.mode === "chat") {
     yield* runChat(options, env, apiKey);
     return;
@@ -62,6 +85,10 @@ export async function* runReview(
   // review never shells out and PR review works for already-signed-in users.
   const token =
     target.mode === "pr" ? await resolveGitHubToken(env) : undefined;
+  const post =
+    target.mode === "pr"
+      ? resolvePostDecision(options.prompt, getPreferences(sessionId).autopost)
+      : false;
 
   yield {
     input: describeTarget(target),
@@ -129,7 +156,7 @@ export async function* runReview(
     }),
   };
 
-  if (target.mode === "pr" && target.post && token !== undefined) {
+  if (target.mode === "pr" && post && token !== undefined) {
     yield* postReview(target, token, confirmed, verdict, reviewable);
   }
 
@@ -327,13 +354,19 @@ function resolveModels(
 }
 
 function describeTarget(target: ReviewTarget): unknown {
-  return target.mode === "pr"
-    ? {
-        mode: "pr",
-        post: target.post,
-        ref: `${target.ref.owner}/${target.ref.repo}#${target.ref.number}`,
-      }
-    : { mode: "local" };
+  if (target.mode === "pr") {
+    return {
+      mode: "pr",
+      ref: `${target.ref.owner}/${target.ref.repo}#${target.ref.number}`,
+    };
+  }
+  return { mode: target.mode };
+}
+
+function confirmPosting(autopost: boolean): string {
+  return autopost
+    ? 'Got it — I\'ll post PR reviews to GitHub automatically again. Add "no post" to a review to skip a one-off.'
+    : 'Got it — PR reviews are report-only now; I won\'t post comments unless you say "post" on a review (or "post by default").';
 }
 
 function parseList(value: string | undefined): readonly string[] {

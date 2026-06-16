@@ -32,8 +32,15 @@ review with inline comments on the changed lines, a summary body, and a verdict
 fix, the inline comment includes a committable GitHub **suggestion** block.
 Findings already raised on the PR are skipped, so re-running doesn't duplicate.
 
-To preview without writing, add an opt-out cue to the prompt: `dry run`,
-`no post`, `don't post`, or `preview` (e.g. `review owner/repo#123 dry run`).
+To preview a single review without writing, add an opt-out cue to the prompt:
+`dry run`, `no post`, `don't post`, or `preview` (e.g. `review owner/repo#123
+dry run`).
+
+You can also change the **default** conversationally: tell the intern
+"don't post comments by default" (or "report only") and it keeps reviews
+report-only for the rest of the session; "post by default" turns auto-posting
+back on. A per-review cue still overrides the standing default. (Preferences are
+per session and reset when `ori dev` restarts.)
 
 ## How findings are confirmed
 
