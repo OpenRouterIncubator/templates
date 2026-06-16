@@ -7,13 +7,17 @@ describe("parseTarget", () => {
     expect(parseTarget("review my staged changes")).toEqual({ mode: "local" });
   });
 
-  it("finds a PR reference embedded in a sentence", () => {
+  it("posts by default for a PR reference", () => {
     const target = parseTarget("please review owner/repo#15 carefully");
-    expect(target).toMatchObject({ mode: "pr", post: false });
+    expect(target).toMatchObject({ mode: "pr", post: true });
   });
 
-  it("treats a 'post' cue as explicit opt-in to write the review", () => {
-    const target = parseTarget("review owner/repo#15 and post it");
-    expect(target).toMatchObject({ mode: "pr", post: true });
+  it("honors an opt-out cue to keep the review report-only", () => {
+    for (const cue of ["dry run", "no post", "don't post", "preview"]) {
+      expect(parseTarget(`review owner/repo#15 ${cue}`)).toMatchObject({
+        mode: "pr",
+        post: false,
+      });
+    }
   });
 });

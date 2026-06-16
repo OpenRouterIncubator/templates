@@ -11,8 +11,9 @@ export interface Dimension {
 }
 
 const JSON_SHAPE = [
-  'Respond as JSON: {"findings":[{"path","line","severity","body"}]}.',
+  'Respond as JSON: {"findings":[{"path","line","severity","body","suggestion"}]}.',
   'severity is "must-fix" or "suggestion"; line is the new-file line number.',
+  '"suggestion" is OPTIONAL: when you have a concrete fix, set it to the exact replacement code for that single new-file line (code only, no diff markers); omit it otherwise.',
   "Report only substantiated, high-signal findings; return an empty array when nothing qualifies.",
 ].join(" ");
 

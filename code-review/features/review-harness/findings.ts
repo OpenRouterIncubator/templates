@@ -10,6 +10,8 @@ export interface Finding {
   readonly line: number;
   readonly path: string;
   readonly severity: Severity;
+  /** Optional replacement code for the new-file line, rendered as a GitHub suggestion. */
+  readonly suggestion?: string;
 }
 
 // One model's take on a finding, tagged with where it came from.
@@ -108,6 +110,9 @@ function toRanked(
     ? "must-fix"
     : "suggestion";
   const first = group[0]?.finding;
+  const suggestion = group
+    .map((candidate) => candidate.finding.suggestion)
+    .find((value): value is string => typeof value === "string");
   return {
     body: first?.body ?? "",
     confidence: modelCount === 0 ? 0 : models.length / modelCount,
@@ -116,6 +121,7 @@ function toRanked(
     models,
     path: first?.path ?? "",
     severity,
+    suggestion,
     votes: models.length,
   };
 }
@@ -155,11 +161,16 @@ function toFinding(value: unknown): Finding | null {
   if (typeof line !== "number" || !Number.isInteger(line)) {
     return null;
   }
+  const suggestion =
+    typeof value.suggestion === "string" && value.suggestion.trim().length > 0
+      ? value.suggestion
+      : undefined;
   return {
     body,
     line,
     path,
     severity: severity === "must-fix" ? "must-fix" : "suggestion",
+    suggestion,
   };
 }
 

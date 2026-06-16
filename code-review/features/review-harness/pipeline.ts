@@ -14,7 +14,12 @@ import {
   type Finding,
 } from "./findings.ts";
 import { collectLocalDiff } from "./gitdiff.ts";
-import { createReview, fetchPullRequest, listChangedFiles } from "./github.ts";
+import {
+  createReview,
+  fetchPullRequest,
+  listChangedFiles,
+  listReviewComments,
+} from "./github.ts";
 import { resolveGitHubToken } from "./github-token.ts";
 import { requestFindings } from "./openrouter.ts";
 import { buildReport, buildReviewSubmission, emptyReport } from "./report.ts";
@@ -247,10 +252,14 @@ async function* postReview(
     name: "post-review",
   };
   try {
+    const existing = await listReviewComments(target.ref, token).catch(
+      () => []
+    );
     const submission = buildReviewSubmission(
       confirmed,
       verdict,
-      hunkIndex(files)
+      hunkIndex(files),
+      existing
     );
     await createReview(target.ref, token, submission);
     yield {

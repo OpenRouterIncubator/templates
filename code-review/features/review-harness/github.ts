@@ -119,3 +119,40 @@ export async function createReview(
   });
   await ensureOk(response, "Create review");
 }
+
+export interface ExistingComment {
+  readonly body: string;
+  readonly line: number | null;
+  readonly path: string;
+}
+
+interface CommentResponse {
+  readonly body?: string;
+  readonly line?: number | null;
+  readonly path?: string;
+}
+
+// Existing inline review comments, so a re-run doesn't repost the same finding.
+export async function listReviewComments(
+  ref: PullRequestRef,
+  token: string
+): Promise<readonly ExistingComment[]> {
+  const comments: ExistingComment[] = [];
+  for (let page = 1; page <= MAX_PAGES; page += 1) {
+    const url = `${pullPath(ref)}/comments?per_page=${PER_PAGE}&page=${page}`;
+    const response = await fetch(url, { headers: headers(token) });
+    await ensureOk(response, "List review comments");
+    const batch = (await response.json()) as readonly CommentResponse[];
+    for (const comment of batch) {
+      comments.push({
+        body: comment.body ?? "",
+        line: comment.line ?? null,
+        path: comment.path ?? "",
+      });
+    }
+    if (batch.length < PER_PAGE) {
+      break;
+    }
+  }
+  return comments;
+}

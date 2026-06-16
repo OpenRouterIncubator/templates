@@ -48,6 +48,13 @@ describe("parseFindings", () => {
   it("returns nothing for non-JSON", () => {
     expect(parseFindings("not json")).toEqual([]);
   });
+
+  it("captures an optional suggestion", () => {
+    const findings = parseFindings(
+      '[{"body":"b","line":1,"path":"p","severity":"must-fix","suggestion":"const x = 1;"}]'
+    );
+    expect(findings[0]?.suggestion).toBe("const x = 1;");
+  });
 });
 
 describe("aggregateFindings", () => {
@@ -90,6 +97,22 @@ describe("aggregateFindings", () => {
   it("takes every finding at face value with a single model", () => {
     const result = aggregateFindings([suggestionA("solo", "correctness")], 1);
     expect(result.confirmed).toHaveLength(1);
+  });
+
+  it("carries a model suggestion through aggregation", () => {
+    const candidate: Candidate = {
+      dimension: "correctness",
+      finding: {
+        body: "fix it",
+        line: 2,
+        path: "p.ts",
+        severity: "must-fix",
+        suggestion: "return x ?? 0;",
+      },
+      model: "m1",
+    };
+    const result = aggregateFindings([candidate], 1);
+    expect(result.confirmed[0]?.suggestion).toBe("return x ?? 0;");
   });
 });
 

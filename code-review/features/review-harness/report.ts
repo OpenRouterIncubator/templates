@@ -4,7 +4,11 @@
 import { type ChangedFile, type Hunk, resolveLine } from "./diff.ts";
 import { DIMENSIONS } from "./dimensions.ts";
 import type { RankedFinding, Verdict } from "./findings.ts";
-import type { ReviewComment, ReviewSubmission } from "./github.ts";
+import type {
+  ExistingComment,
+  ReviewComment,
+  ReviewSubmission,
+} from "./github.ts";
 
 export interface ReportInput {
   readonly confirmed: readonly RankedFinding[];
@@ -14,6 +18,8 @@ export interface ReportInput {
   readonly title: string;
   readonly verdict: Verdict;
 }
+
+const WHITESPACE = /\s+/g;
 
 const VERDICT_LABEL: Record<Verdict, string> = {
   APPROVE: "approved",
@@ -57,25 +63,64 @@ export function emptyReport(title: string): string {
 export function buildReviewSubmission(
   confirmed: readonly RankedFinding[],
   verdict: Verdict,
-  hunksByPath: ReadonlyMap<string, readonly Hunk[]>
+  hunksByPath: ReadonlyMap<string, readonly Hunk[]>,
+  existing: readonly ExistingComment[] = []
 ): ReviewSubmission {
+  const fresh = filterAlreadyRaised(confirmed, existing);
   const comments: ReviewComment[] = [];
   const folded: RankedFinding[] = [];
-  for (const finding of confirmed) {
+  for (const finding of fresh) {
     const line = resolveLine(hunksByPath.get(finding.path) ?? [], finding.line);
     if (line === null) {
       folded.push(finding);
       continue;
     }
-    const note = line === finding.line ? "" : " _(nearest changed line)_";
     comments.push({
-      body: `**${finding.severity}** — ${finding.body}${note}`,
+      body: commentBody(finding, line),
       line,
       path: finding.path,
       side: "RIGHT",
     });
   }
-  return { body: submissionBody(confirmed, folded), comments, event: verdict };
+  return { body: submissionBody(fresh, folded), comments, event: verdict };
+}
+
+// Build the inline comment, appending a committable GitHub suggestion block when
+// the model proposed a replacement AND the comment lands on the exact changed
+// line (a snapped/nearest line would replace the wrong code).
+function commentBody(finding: RankedFinding, line: number): string {
+  const note = line === finding.line ? "" : " _(nearest changed line)_";
+  const base = `**${finding.severity}** — ${finding.body}${note}`;
+  if (finding.suggestion !== undefined && line === finding.line) {
+    return `${base}\n\n\`\`\`suggestion\n${finding.suggestion}\n\`\`\``;
+  }
+  return base;
+}
+
+// Drop findings already raised on the PR — same path+line, or same path+text.
+function filterAlreadyRaised(
+  findings: readonly RankedFinding[],
+  existing: readonly ExistingComment[]
+): readonly RankedFinding[] {
+  const byLine = new Set<string>();
+  const byText = new Set<string>();
+  for (const comment of existing) {
+    if (comment.line !== null) {
+      byLine.add(`${comment.path}:${comment.line}`);
+    }
+    byText.add(`${comment.path}::${normalizeText(comment.body)}`);
+  }
+  return findings.filter(
+    (finding) =>
+      !(
+        byLine.has(`${finding.path}:${finding.line}`) ||
+        byText.has(`${finding.path}::${normalizeText(finding.body)}`)
+      )
+  );
+}
+
+function normalizeText(text: string): string {
+  return text.toLowerCase().replace(WHITESPACE, " ").trim();
 }
 
 function summaryLine(

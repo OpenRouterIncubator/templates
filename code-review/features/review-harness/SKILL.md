@@ -18,11 +18,16 @@ of models, votes to keep only corroborated findings, and streams a verdict.
   workspace; falls back to the last commit when the tree is clean). No token
   needed.
 
-## Posting is opt-in
+## PR mode posts automatically
 
-In PR mode the review is **only** posted to GitHub when the prompt also says
-`post` (e.g. `review owner/repo#123 and post`). Otherwise it is report-only, so
-a stray prompt never writes to a PR.
+In PR mode the harness **posts the review to GitHub by default** — a single
+review with inline comments on the changed lines, a summary body, and a verdict
+(`APPROVE` / `COMMENT` / `REQUEST_CHANGES`). When the model proposes a concrete
+fix, the inline comment includes a committable GitHub **suggestion** block.
+Findings already raised on the PR are skipped, so re-running doesn't duplicate.
+
+To preview without writing, add an opt-out cue to the prompt: `dry run`,
+`no post`, `don't post`, or `preview` (e.g. `review owner/repo#123 dry run`).
 
 ## How findings are confirmed
 

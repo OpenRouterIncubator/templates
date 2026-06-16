@@ -39,6 +39,39 @@ describe("buildReviewSubmission", () => {
     });
     expect(submission.body).toContain("b.ts:99");
   });
+
+  it("renders a committable suggestion block on the exact changed line", () => {
+    const submission = buildReviewSubmission(
+      [ranked({ line: 3, path: "a.ts", suggestion: "const y = 3;" })],
+      "REQUEST_CHANGES",
+      hunks
+    );
+    expect(submission.comments[0]?.body).toContain(
+      "```suggestion\nconst y = 3;\n```"
+    );
+  });
+
+  it("omits the suggestion block when the comment snaps to a nearby line", () => {
+    const submission = buildReviewSubmission(
+      [ranked({ line: 99, path: "a.ts", suggestion: "const y = 3;" })],
+      "COMMENT",
+      hunks
+    );
+    // line 99 snaps to the hunk boundary (5), so a one-line suggestion would
+    // replace the wrong code and must not be emitted.
+    expect(submission.comments[0]?.line).toBe(5);
+    expect(submission.comments[0]?.body).not.toContain("```suggestion");
+  });
+
+  it("skips findings already raised on the PR", () => {
+    const submission = buildReviewSubmission(
+      [ranked({ line: 3, path: "a.ts" })],
+      "REQUEST_CHANGES",
+      hunks,
+      [{ body: "stale", line: 3, path: "a.ts" }]
+    );
+    expect(submission.comments).toHaveLength(0);
+  });
 });
 
 describe("buildReport", () => {
