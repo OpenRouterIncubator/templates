@@ -11,7 +11,7 @@
     "check": "ultracite check",
     "fix": "ultracite fix",
     "test": "bun test",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "if find . -path ./node_modules -prune -o -name '*.ts' -print | grep -q .; then tsc --noEmit; else echo 'no .ts files, skipping typecheck'; fi"
   },
   "type": "module",
   "workspaces": [
