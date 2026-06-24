@@ -1,9 +1,8 @@
 # default
 
 The baseline Ori persona template — the same workspace `ori init` produces: an
-ordinary Bun/TypeScript project whose persona lives in a root `ori.md` (the
-default `model` plus the always-on base prompt) and a `review` feature with a
-small deterministic review command.
+ordinary Bun/TypeScript project with a `system` feature (always-on base prompt +
+a feature-development skill) and a `review` feature (on-demand review skill).
 
 Pulled in via:
 
@@ -13,10 +12,25 @@ ori init my-intern --template=default
 
 `--template=default` is equivalent to a plain `ori init`.
 
-## Layout
+## Fresh clone? Run `ori init .` before `bun install`
 
-- `ori.md` — the persona: frontmatter sets the default `model`; the body is the
-  base system prompt (RFC 0002.14).
-- `features/review/` — an on-demand `review` skill plus a deterministic
-  `ori review <file>` command (`cmd.ts` + `checks.ts`, with tests). No model and
-  no network — extend it, or swap in a model-backed review.
+This project depends on the Ori SDK via `"ori": "file:.ori/sdk"`, and `.ori/` is
+git-ignored — so the SDK cache is **not** committed. A fresh clone therefore has
+the dependency declared but not its on-disk target, and a bare `bun install` fails
+to resolve it:
+
+```text
+error: Could not find package.json for "file:.ori/sdk" dependency "ori"
+```
+
+bun resolves `file:` dependencies before any `preinstall`/`postinstall` script
+runs, so a lifecycle hook cannot fix this. Materialize the SDK cache first, then
+install:
+
+```sh
+ori init .      # materializes .ori/sdk (idempotent — safe to re-run)
+bun install
+```
+
+`ori init .` detects the existing workspace, (re)writes the `.ori/sdk` cache, and
+keeps `.gitignore` correct. It does not overwrite your code.
