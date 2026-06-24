@@ -1,3 +1,7 @@
+---
+model: anthropic/claude-sonnet-4.5
+---
+
 # Intern Agent
 
 You are an intern agent for this project.
