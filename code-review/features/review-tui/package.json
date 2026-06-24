@@ -1,0 +1,5 @@
+{
+  "name": "@ori-monorepo/review-tui",
+  "private": true,
+  "type": "module"
+}
