@@ -44,16 +44,32 @@ function gitCredentialToken(): Promise<string | undefined> {
       stdio: ["pipe", "pipe", "ignore"],
     });
     let output = "";
+    let settled = false;
+    const settle = (value: string | undefined) => {
+      if (settled) {
+        return;
+      }
+      settled = true;
+      clearTimeout(timer);
+      resolve(value);
+    };
+    // A blocking or prompting credential helper would otherwise hang PR review
+    // forever, so bound it like ghCliToken does.
+    const timer = setTimeout(() => {
+      child.kill();
+      settle(undefined);
+    }, TIMEOUT_MS);
     child.stdout?.on("data", (chunk) => {
       output += String(chunk);
     });
-    child.on("error", () => resolve(undefined));
+    child.on("error", () => settle(undefined));
     child.on("close", () => {
       const match = PASSWORD_LINE.exec(output);
-      resolve(match?.[1]?.trim() || undefined);
+      settle(match?.[1]?.trim() || undefined);
     });
     if (child.stdin === null) {
-      resolve(undefined);
+      child.kill();
+      settle(undefined);
       return;
     }
     child.stdin.write("protocol=https\nhost=github.com\n\n");

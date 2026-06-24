@@ -19,6 +19,10 @@ const NO_POST_CUE =
 const POST_CUE = /\bpost\b/i;
 const REVIEW_INTENT = /^\s*\/?(?:review|audit|critique|code[-\s]?review)\b/i;
 const WHITESPACE = /\s+/;
+// Strip surrounding punctuation a token may carry in prose (trailing ",", ".",
+// ";" or wrapping parens/quotes) without touching the internal "/", "#", ".",
+// "-" that make up a valid short ref.
+const EDGE_PUNCTUATION = /^[^\w]+|[^\w]+$/g;
 
 export function parseTarget(prompt: string): ReviewTarget {
   const ref = findRef(prompt);
@@ -50,7 +54,7 @@ export function resolvePostDecision(
 // matched against the whole prompt.
 function findRef(prompt: string): PullRequestRef | null {
   for (const token of prompt.split(WHITESPACE)) {
-    const ref = parsePullRequestRef(token);
+    const ref = parsePullRequestRef(token.replace(EDGE_PUNCTUATION, ""));
     if (ref !== null) {
       return ref;
     }

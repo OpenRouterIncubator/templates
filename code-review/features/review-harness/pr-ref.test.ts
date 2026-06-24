@@ -25,4 +25,30 @@ describe("parsePullRequestRef", () => {
     expect(parsePullRequestRef("review my changes")).toBeNull();
     expect(parsePullRequestRef("owner/repo")).toBeNull();
   });
+
+  it("rejects the short form when wrapped in or trailed by punctuation", () => {
+    for (const input of [
+      "owner/repo#15,",
+      "owner/repo#15.",
+      "(owner/repo#15)",
+    ]) {
+      expect(parsePullRequestRef(input)).toBeNull();
+    }
+  });
+
+  it("parses once surrounding punctuation is stripped", () => {
+    for (const input of [
+      "owner/repo#15,",
+      "owner/repo#15.",
+      "(owner/repo#15)",
+    ]) {
+      expect(
+        parsePullRequestRef(input.replace(/^[^\w]+|[^\w]+$/g, ""))
+      ).toEqual({
+        number: 15,
+        owner: "owner",
+        repo: "repo",
+      });
+    }
+  });
 });

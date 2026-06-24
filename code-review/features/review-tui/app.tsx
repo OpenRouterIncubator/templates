@@ -73,23 +73,34 @@ export const App = ({ chat }: { chat: ChatRuntime }) => {
     setBusy(true);
     let state = initialState;
     setActive(state);
-    for await (const event of chat.sendMessage({ prompt })) {
-      state = reduce(state, event);
-      setActive(state);
+    try {
+      for await (const event of chat.sendMessage({ prompt })) {
+        state = reduce(state, event);
+        setActive(state);
+      }
+      // The stream closing IS the end of the turn — Ori may not deliver a
+      // session.ended to the chat, so finalize here to clear the status line.
+      setHistory((prev) => [...prev, { ...state, done: true }]);
+    } catch (cause) {
+      // A throwing stream must not wedge the TUI: surface the failure into the
+      // review state's error field so it renders, then fall through to the
+      // finally block which always clears busy/active.
+      const message = cause instanceof Error ? cause.message : String(cause);
+      setHistory((prev) => [...prev, { ...state, done: true, error: message }]);
+    } finally {
+      setActive(undefined);
+      setBusy(false);
     }
-    // The stream closing IS the end of the turn — Ori may not deliver a
-    // session.ended to the chat, so finalize here to clear the status line.
-    setHistory((prev) => [...prev, { ...state, done: true }]);
-    setActive(undefined);
-    setBusy(false);
   };
 
   useInput((char, key) => {
-    if (busy) {
-      return;
-    }
+    // Ctrl-C must always exit, even mid-review — gating quit on `busy` would
+    // wedge the TUI if a stream hangs, so check it before the busy early-return.
     if (key.ctrl && char === "c") {
       exit();
+      return;
+    }
+    if (busy) {
       return;
     }
     if (key.return) {

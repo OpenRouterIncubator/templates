@@ -21,6 +21,20 @@ describe("parseTarget", () => {
       ref: { number: 15, owner: "owner", repo: "repo" },
     });
   });
+
+  it("selects PR mode when the ref carries trailing or wrapping punctuation", () => {
+    for (const prompt of [
+      "please review owner/repo#15, then ship",
+      "please review owner/repo#15.",
+      "please review owner/repo#15; thanks",
+      "please review (owner/repo#15)",
+    ]) {
+      expect(parseTarget(prompt)).toMatchObject({
+        mode: "pr",
+        ref: { number: 15, owner: "owner", repo: "repo" },
+      });
+    }
+  });
 });
 
 describe("resolvePostDecision", () => {

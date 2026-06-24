@@ -131,12 +131,28 @@ export async function* runReview(
     text: `Reviewing ${reviewable.length} file(s) across ${DIMENSIONS.length} dimensions with ${models.length} model(s)…`,
   };
 
-  const candidates = yield* runDimensions(
+  const { attempted, candidates, succeeded } = yield* runDimensions(
     apiKey,
     models,
     resolved.title,
     renderDiff(reviewable)
   );
+
+  // Fail closed: when every model call failed we have no signal at all, so an
+  // empty candidate list would otherwise vote through an APPROVE (and, in PR
+  // mode, post it). Surface the failure instead of producing a report.
+  if (attempted > 0 && succeeded === 0) {
+    yield {
+      kind: "error",
+      message: "all model calls failed — cannot review",
+    };
+    yield {
+      error: "all model calls failed",
+      kind: "ended",
+      ok: false,
+    };
+    return;
+  }
 
   const { confirmed, demoted } = aggregateFindings(candidates, models.length);
   for (const finding of confirmed) {
@@ -188,15 +204,25 @@ async function* runChat(
   }
 }
 
+// The flat candidate list for voting, plus how many model calls were attempted
+// vs actually succeeded so the caller can fail closed when none came back.
+interface DimensionRun {
+  readonly attempted: number;
+  readonly candidates: Candidate[];
+  readonly succeeded: number;
+}
+
 // Fan the review dimensions out, each across the model ensemble, streaming
-// progress and tool events; returns the flat candidate list for voting.
+// progress and tool events; returns the candidates plus the success tally.
 async function* runDimensions(
   apiKey: string,
   models: readonly string[],
   title: string,
   diffText: string
-): AsyncGenerator<PipelineEvent, Candidate[]> {
+): AsyncGenerator<PipelineEvent, DimensionRun> {
   const all: Candidate[] = [];
+  let attempted = 0;
+  let succeeded = 0;
   for (const dimension of DIMENSIONS) {
     yield { kind: "dimension-start", title: dimension.title };
     for (const model of models) {
@@ -216,40 +242,47 @@ async function* runDimensions(
         })
       )
     );
-    const { candidates, events } = collectDimensionResults(
-      dimension.id,
-      models,
-      settled
-    );
-    for (const event of events) {
+    const result = collectDimensionResults(dimension.id, models, settled);
+    for (const event of result.events) {
       yield event;
     }
-    all.push(...candidates);
+    all.push(...result.candidates);
+    attempted += result.attempted;
+    succeeded += result.succeeded;
     yield {
-      count: candidates.length,
+      count: result.candidates.length,
       kind: "dimension-done",
       title: dimension.title,
     };
   }
-  return all;
+  return { attempted, candidates: all, succeeded };
 }
 
 // Turn one dimension's settled model calls into candidates plus the tool-done
-// events that report each model's outcome.
+// events that report each model's outcome, and tally attempts vs successes.
 function collectDimensionResults(
   dimensionId: string,
   models: readonly string[],
   settled: readonly PromiseSettledResult<readonly Finding[]>[]
-): { candidates: Candidate[]; events: PipelineEvent[] } {
+): {
+  attempted: number;
+  candidates: Candidate[];
+  events: PipelineEvent[];
+  succeeded: number;
+} {
   const candidates: Candidate[] = [];
   const events: PipelineEvent[] = [];
+  let attempted = 0;
+  let succeeded = 0;
   for (let index = 0; index < settled.length; index += 1) {
     const model = models[index];
     const result = settled[index];
     if (model === undefined || result === undefined) {
       continue;
     }
+    attempted += 1;
     if (result.status === "fulfilled") {
+      succeeded += 1;
       for (const finding of result.value) {
         candidates.push({ dimension: dimensionId, finding, model });
       }
@@ -268,7 +301,7 @@ function collectDimensionResults(
       });
     }
   }
-  return { candidates, events };
+  return { attempted, candidates, events, succeeded };
 }
 
 async function resolveDiff(

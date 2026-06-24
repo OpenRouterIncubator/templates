@@ -72,6 +72,38 @@ describe("buildReviewSubmission", () => {
     );
     expect(submission.comments).toHaveLength(0);
   });
+
+  it("downgrades the event when every must-fix was already raised", () => {
+    const submission = buildReviewSubmission(
+      [ranked({ body: "issue", line: 3, path: "a.ts", severity: "must-fix" })],
+      "REQUEST_CHANGES",
+      hunks,
+      [{ body: "issue", line: 3, path: "a.ts" }]
+    );
+    expect(submission.comments).toHaveLength(0);
+    expect(submission.event).not.toBe("REQUEST_CHANGES");
+    expect(submission.body).toContain("No blocking issues found");
+  });
+
+  it("filters a finding whose decorated comment snapped to a nearby line", () => {
+    // The prior run posted this must-fix decorated by commentBody(): the
+    // "**severity** — " prefix plus the "nearest changed line" note because it
+    // snapped from line 99 to the hunk boundary (5). Dedup must still match it
+    // against the raw finding body so it is not reposted.
+    const submission = buildReviewSubmission(
+      [ranked({ body: "off diff", line: 99, path: "a.ts" })],
+      "REQUEST_CHANGES",
+      hunks,
+      [
+        {
+          body: "**must-fix** — off diff _(nearest changed line)_",
+          line: 5,
+          path: "a.ts",
+        },
+      ]
+    );
+    expect(submission.comments).toHaveLength(0);
+  });
 });
 
 describe("buildReport", () => {

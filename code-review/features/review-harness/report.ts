@@ -82,19 +82,57 @@ export function buildReviewSubmission(
       side: "RIGHT",
     });
   }
-  return { body: submissionBody(fresh, folded), comments, event: verdict };
+  return {
+    body: submissionBody(fresh, folded),
+    comments,
+    event: reconcileEvent(verdict, fresh),
+  };
+}
+
+// After dedup, the verdict may overstate what survives: a rerun where every
+// must-fix was already posted leaves no blocking comments to make, so a
+// REQUEST_CHANGES event would contradict the "No blocking issues" body. Recompute
+// the event from the surviving findings — nothing fresh approves, no fresh
+// must-fix downgrades to a comment, and only a fresh must-fix keeps the verdict.
+function reconcileEvent(
+  verdict: Verdict,
+  fresh: readonly RankedFinding[]
+): Verdict {
+  if (fresh.length === 0) {
+    return "APPROVE";
+  }
+  const hasMustFix = fresh.some((finding) => finding.severity === "must-fix");
+  if (!hasMustFix) {
+    return "COMMENT";
+  }
+  return verdict;
 }
 
 // Build the inline comment, appending a committable GitHub suggestion block when
 // the model proposed a replacement AND the comment lands on the exact changed
 // line (a snapped/nearest line would replace the wrong code).
 function commentBody(finding: RankedFinding, line: number): string {
-  const note = line === finding.line ? "" : " _(nearest changed line)_";
+  const note = line === finding.line ? "" : NEAREST_LINE_NOTE;
   const base = `**${finding.severity}** — ${finding.body}${note}`;
   if (finding.suggestion !== undefined && line === finding.line) {
     return `${base}\n\n\`\`\`suggestion\n${finding.suggestion}\n\`\`\``;
   }
   return base;
+}
+
+const NEAREST_LINE_NOTE = " _(nearest changed line)_";
+const SEVERITY_PREFIX = /^\*\*[^*]+\*\*\s*—\s*/;
+const SUGGESTION_FENCE = /\n*```suggestion[\s\S]*$/;
+
+// Reduce a posted, decorated comment back to the raw finding body so dedup can
+// compare like-for-like. commentBody() wraps the body in a "**severity** — "
+// prefix and may append a "nearest changed line" note or a suggestion fence;
+// strip all three before normalizing so a re-run matches the original finding.
+function canonicalCommentBody(body: string): string {
+  return body
+    .replace(SUGGESTION_FENCE, "")
+    .replace(SEVERITY_PREFIX, "")
+    .replace(NEAREST_LINE_NOTE, "");
 }
 
 // Drop findings already raised on the PR — same path+line, or same path+text.
@@ -108,7 +146,9 @@ function filterAlreadyRaised(
     if (comment.line !== null) {
       byLine.add(`${comment.path}:${comment.line}`);
     }
-    byText.add(`${comment.path}::${normalizeText(comment.body)}`);
+    byText.add(
+      `${comment.path}::${normalizeText(canonicalCommentBody(comment.body))}`
+    );
   }
   return findings.filter(
     (finding) =>
