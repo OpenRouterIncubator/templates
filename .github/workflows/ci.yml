@@ -39,10 +39,10 @@ jobs:
             # A template whose linting is owned by the ori framework ships no
             # `check` script (it delegates to `ori lint`, which is not installed
             # in this repo's CI). Skip those here; the ori repo lints them.
-            if bun --cwd "$dir" run --silent check --help >/dev/null 2>&1 || grep -q '"check"' "${dir}package.json"; then
+            if grep -q '"check":' "${dir}package.json"; then
               (cd "$dir" && bun install && bun run check)
             else
-              echo "no \`check\` script in ${dir%/} (framework-owned lint), skipping"
+              echo "no check script in ${dir%/} (framework-owned lint via ori lint), skipping"
             fi
             echo "::endgroup::"
           done
