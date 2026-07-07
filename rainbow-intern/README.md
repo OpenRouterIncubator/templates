@@ -19,7 +19,7 @@ ori init my-intern --template=rainbow-intern
   shadows the built-in and becomes the default TUI. In an interactive terminal
   it renders the conversation as an Ink component (`app.tsx`, a thin container
   over the `MessageView` components in `message.tsx`), coloring each character
-  of the streamed `assistant_text` deltas across a six-step rainbow; runtime
+  of the streamed `assistant.text.delta` events across a six-step rainbow; runtime
   errors and failed turns show as status lines. Under a non-TTY harness (piped
   stdin) it falls back to plain ANSI line streaming (`piped.ts`). The pure
   helpers — `colorRuns`/`colorize` in `rainbow.ts`,
