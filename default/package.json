@@ -1,17 +1,14 @@
 {
   "devDependencies": {
-    "@biomejs/biome": "2.4.15",
     "@types/bun": "1.3.3",
-    "typescript": "6.0.3",
-    "ultracite": "7.8.0"
+    "typescript": "6.0.3"
   },
   "name": "default",
   "private": true,
   "scripts": {
-    "check": "ultracite check",
-    "fix": "ultracite fix",
+    "lint": "ori lint",
     "test": "bun test",
-    "typecheck": "if find . -path ./node_modules -prune -o -name '*.ts' -print | grep -q .; then tsc --noEmit; else echo 'no .ts files, skipping typecheck'; fi"
+    "typecheck": "tsc --noEmit"
   },
   "type": "module",
   "workspaces": [
