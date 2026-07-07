@@ -5,8 +5,8 @@ import type { TurnHandlers } from "./turn.ts";
 import { runTurn } from "./turn.ts";
 
 const delta = (text: string): AgentRuntimeEvent => ({
-  payload: { delta: text, streamKind: "assistant_text" },
-  type: "content.delta",
+  payload: { delta: text },
+  type: "assistant.text.delta",
 });
 
 const chatYielding = (

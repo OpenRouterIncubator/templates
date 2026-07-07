@@ -6,8 +6,8 @@ const echoChat = (prompts: string[]): ChatRuntime => ({
   async *sendMessage(input: { readonly prompt: string }) {
     prompts.push(input.prompt);
     const event: AgentRuntimeEvent = {
-      payload: { delta: `echo:${input.prompt}`, streamKind: "assistant_text" },
-      type: "content.delta",
+      payload: { delta: `echo:${input.prompt}` },
+      type: "assistant.text.delta",
     };
     yield await Promise.resolve(event);
   },
