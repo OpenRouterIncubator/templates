@@ -5,3 +5,9 @@ coverage/
 
 .agents
 .claude
+.env
+.env.*
+!.env.example
+.agents/skills/
+.claude/skills/
+.ori/

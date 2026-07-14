@@ -1,5 +1,6 @@
 ---
 model: openrouter/auto
+version: 0.0.0
 ---
 
 # Intern
