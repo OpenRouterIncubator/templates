@@ -9,10 +9,14 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "ori": "file:.ori/sdk"
+    "ori": "file:.ori/sdk",
+    "react": "19.2.7",
+    "react-dom": "19.2.7"
   },
   "devDependencies": {
     "@types/bun": "1.3.3",
+    "@types/react": "19.2.17",
+    "@types/react-dom": "19.2.3",
     "typescript": "6.0.3"
   },
   "workspaces": [
