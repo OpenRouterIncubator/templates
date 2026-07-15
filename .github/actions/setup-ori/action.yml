@@ -1,0 +1,50 @@
+name: setup-ori
+description: >-
+  Install the ori CLI and put it on PATH. Retries the network install to
+  absorb transient failures instead of masking them behind a later confusing
+  error from a template that depends on `ori init` having run.
+
+runs:
+  using: composite
+  steps:
+    - name: Install ori CLI
+      shell: bash
+      run: |
+        set -euo pipefail
+
+        install_url="https://openrouter.ai/labs/ori/install.sh"
+        attempts=5
+        delay=5
+
+        for attempt in $(seq 1 "$attempts"); do
+          echo "::group::ori CLI install attempt ${attempt}/${attempts}"
+          if curl -fsSL --proto '=https' --retry 3 --retry-connrefused \
+               --max-time 120 "$install_url" -o /tmp/ori-install.sh; then
+            if bash /tmp/ori-install.sh; then
+              echo "::endgroup::"
+              echo "ori CLI installed on attempt ${attempt}"
+              exit 0
+            fi
+          fi
+          echo "::endgroup::"
+          echo "::warning::ori CLI install attempt ${attempt} failed"
+          if [ "$attempt" -lt "$attempts" ]; then
+            echo "Retrying in ${delay}s..."
+            sleep "$delay"
+            delay=$((delay * 2))
+          fi
+        done
+
+        echo "::error::ori CLI install failed after ${attempts} attempts"
+        exit 1
+
+    - name: Verify ori CLI on PATH
+      shell: bash
+      run: |
+        set -euo pipefail
+        echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+        if [ ! -x "$HOME/.local/bin/ori" ]; then
+          echo "::error::ori binary not found at \$HOME/.local/bin/ori after install"
+          exit 1
+        fi
+        "$HOME/.local/bin/ori" --version
