@@ -11,6 +11,8 @@
     "@commitlint/config-conventional": "21.0.2"
   },
   "scripts": {
-    "commitlint": "commitlint"
+    "check": "for dir in */; do [ -f \"${dir}package.json\" ] || continue; if grep -q '\"ori\": \"file:.ori/sdk\"' \"${dir}package.json\"; then (cd \"$dir\" && ori init .); fi; if grep -qE '\"(check|lint)\":' \"${dir}package.json\"; then script=check; grep -q '\"check\":' \"${dir}package.json\" || script=lint; (cd \"$dir\" && bun install && bun run \"$script\") || exit 1; fi; done",
+    "commitlint": "commitlint",
+    "typecheck": "for dir in */; do [ -f \"${dir}package.json\" ] || continue; if grep -q '\"ori\": \"file:.ori/sdk\"' \"${dir}package.json\"; then (cd \"$dir\" && ori init .); fi; (cd \"$dir\" && bun install && bun run typecheck) || exit 1; done"
   }
 }
