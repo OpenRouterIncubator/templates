@@ -1,43 +1,7 @@
 import { describe, expect, it } from "bun:test";
-import { buildSearchQuery, hasScope, parseSearchArgs } from "./search.ts";
+import { buildSearchQuery, hasScope } from "./search.ts";
 
 const NOW = new Date("2026-01-31T00:00:00Z");
-
-describe("parseSearchArgs", () => {
-  it("parses flags and defaults the window", () => {
-    const opts = parseSearchArgs(["--repo", "acme/widgets", "--author", "kit"]);
-    expect(opts.repo).toBe("acme/widgets");
-    expect(opts.author).toBe("kit");
-    expect(opts.sinceDays).toBe(30);
-  });
-
-  it("only accepts valid states", () => {
-    expect(parseSearchArgs(["--state", "open"]).state).toBe("open");
-    expect(parseSearchArgs(["--state", "bogus"]).state).toBeUndefined();
-  });
-
-  it("skips an unknown flag without consuming the next flag", () => {
-    const opts = parseSearchArgs(["--unknown", "x", "--repo", "acme/y"]);
-    expect(opts.repo).toBe("acme/y");
-  });
-
-  it("parses org, reviewer, involves, and since flags", () => {
-    const opts = parseSearchArgs([
-      "--org",
-      "acme",
-      "--reviewer",
-      "kit",
-      "--involves",
-      "ada",
-      "--since",
-      "14",
-    ]);
-    expect(opts.org).toBe("acme");
-    expect(opts.reviewer).toBe("kit");
-    expect(opts.involves).toBe("ada");
-    expect(opts.sinceDays).toBe(14);
-  });
-});
 
 describe("hasScope", () => {
   it("requires org or repo", () => {

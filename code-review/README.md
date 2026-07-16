@@ -13,22 +13,24 @@ ori init my-reviewer --template=code-review
 
 ## Features
 
-Working commands (real `cmd.ts`, GitHub + OpenRouter integration):
+Working commands (real `command.ts` contributions, GitHub + OpenRouter
+integration; invocable as `/name` by a human or as a tool by the agent):
 
 - `review-pr` — fetch the PR diff, analyze via OpenRouter (optionally a second
   model), run a local **secret-grep** pass, resolve findings onto valid diff
   lines, **dedup against existing review threads**, skip when CI is already
-  failing, and post an inline review with a verdict. `--format json` prints the
-  review instead of posting. Run: `ori code-review review-pr <owner/repo#N>`.
+  failing, and post an inline review with a verdict. `--format json` returns
+  the review as structured data instead of posting.
+  Run: `/review-pr <owner/repo#N>`.
 - `investigate-bug` — scan the local repo for the report's terms and produce a
   root-cause analysis with `file:line` citations via OpenRouter.
-  Run: `ori code-review investigate-bug "<bug report>" [--max-files N]`.
+  Run: `/investigate-bug "<bug report>" [--max-files N]`.
 - `search-pr` — scoped, time-windowed GitHub PR search (`--org`/`--repo`
-  required). Run: `ori code-review search-pr --repo acme/x --author kit`.
+  required). Run: `/search-pr --repo acme/x --author kit`.
 - `pr-patrol` — sweep a repo's open PRs and report which need maintenance
   (conflicts, rebase, blocked, failing checks, draft, stale). Read-only.
-  Run: `ori pr-patrol run --repo acme/x`. Also runnable directly with Bun
-  (`bun features/pr-patrol/cmd.ts --repo acme/x`); the included
+  Run: `/pr-patrol --repo acme/x`. Also runnable directly with Bun
+  (`bun features/pr-patrol/command.ts --repo acme/x`); the included
   `.github/workflows/pr-patrol.yml` drives it on `pull_request` events.
 
 Guidance skills (methodology the agent applies):
