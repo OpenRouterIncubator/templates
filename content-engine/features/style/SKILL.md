@@ -23,5 +23,5 @@ Every piece must read like a specific person wrote it on purpose.
 
 ## Mechanical gate
 
-Run `ori style check <file>` on every draft. Error-severity findings block
+Run `/style <file>` on every draft. Error-severity findings block
 shipping; warnings deserve a pass of judgment, not auto-acceptance.
