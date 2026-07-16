@@ -49,30 +49,91 @@ This repo is a collection of **persona templates** for
 - `SKILL.md` — on-demand guidance, surfaced only when the skill is engaged.
   Frontmatter MUST set `name` and `description`; the body is free-form prose. Add
   more skills under `skills/<name>/SKILL.md`.
-- `cmd.ts` — a CLI command; `default`-exports a `CommandHook`. It MUST carry the
-  discriminant `type: "commandHook"` and a `run(args, context)` function.
-- Other typed contributions (`harness.ts`, `route.ts`, `db.ts`, …) each
-  `default`-export one value (or an array) with their own `type` discriminant.
+- `command.ts` — a deterministic command, invocable as `/name` by a human and
+  as a tool by the agent (same `run` either way). A standalone file MUST
+  `export default` the contribution: `features/<id>/command.ts` (name defaults
+  to the feature id) or `commands/<name>/command.ts` (name defaults to
+  `<name>`). Alternatively export `command` (single) or `commands` (array of
+  named entries) from `feature.ts`.
+- `feature.ts` — the feature module entry. Only needed for `harness`, `chat`,
+  `schedule`, `api`, or `prompt` contributions, or a multi-command `commands`
+  array — those are its named exports (the closed set: `harness`, `chat`,
+  `schedule`, `api`, `prompt`, `command`, `commands`). A plain command needs
+  just `command.ts`.
 
 The `generation` kind (`model`/`temperature`/`persona`) is **deferred** in the
 current Ori spec (RFC 0003.2 — defaults come from the harness), so don't add a
 `generation.ts`; put persona/working-style in `system/prompt.md` instead.
 
-> **Type discriminants are required and TypeScript won't catch a missing one.**
-> Templates author plain TS that doesn't import Ori's types, so a `cmd.ts`
-> missing its `type` field compiles and lints fine — but is silently dropped at
-> boot. Always include it:
+> **Templates author plain TS that doesn't import Ori's types.** Discovery is
+> by file/export name alone — there are no `type` discriminants. Define a local
+> structural interface matching the contract so `run` stays typed. Declare
+> arguments in the spec and let the runtime parse and validate them — never
+> hand-roll parsing from raw argv:
 >
 > ```ts
-> // cmd.ts
+> // features/changelog/command.ts — registers /changelog
+> type Args = { readonly days: number };
+>
+> interface CommandContext {
+>   readonly args: Args; // parsed + typed from `arguments` by the runtime
+>   readonly argv: string; // raw text after /name
+>   readonly exec: (
+>     bin: string,
+>     args?: readonly string[]
+>   ) => Promise<{ exitCode: number; stdout: string; stderr: string }>;
+>   readonly log: (line: string) => void;
+>   readonly invoker: { readonly via: "slash" | "tool" };
+>   readonly cwd: string;
+> }
+>
+> interface CommandResult {
+>   readonly ok: boolean;
+>   readonly message?: string;
+> }
+>
 > const command = {
->   type: "commandHook" as const,
->   name: "<verb>",
->   description: "…",
->   run: async (args: readonly string[], context) => 0,
+>   description: "Summarize recent commits as a changelog",
+>   arguments: {
+>     days: {
+>       type: "number",
+>       description: "How many days back to look",
+>       default: 7,
+>       positional: true,
+>     },
+>   },
+>   run: async (ctx: CommandContext): Promise<CommandResult> => {
+>     const out = await ctx.exec("git", [
+>       "log",
+>       `--since=${ctx.args.days} days ago`,
+>       "--oneline",
+>     ]);
+>     if (out.exitCode !== 0) {
+>       return { ok: false, message: out.stderr.trim() };
+>     }
+>     ctx.log("scanned git history"); // progress; never console.log
+>     return { ok: true, message: out.stdout.trim() || "No commits." };
+>   },
 > };
+>
 > export default command;
 > ```
+
+Command rules:
+
+- `name` is optional (slug `[a-z][a-z0-9-]*`); it defaults from the file or
+  feature path and is only required for entries in a `feature.ts` `commands`
+  array. `scopes` optionally lists capability scopes the invoker must hold.
+- The same `run` serves a human typing `/name` and the agent calling the
+  command as a tool — branch on `ctx.invoker.via` only when output should
+  differ.
+- No `console.*` or `process.stdout`/`stderr` in contributions (RFC 0011):
+  stream progress via `ctx.log`/`ctx.emit` and put the outcome in the returned
+  `message` (plus optional structured `data`).
+- Return `{ ok: false, message }` for expected failures; a thrown error is
+  caught and reported as `ok: false`.
+- The full `CommandContext` also carries `emit(event)`, `env`, and a `logger`
+  scoped to the feature.
 
 Conventions:
 
@@ -94,7 +155,7 @@ Conventions:
 3. Author the persona in `<template>/features/system/prompt.md`.
 4. Add capability skills as `<template>/features/<id>/` folders, each with a
    `package.json` (`@ori-monorepo/<id>`) and a `SKILL.md`. Remove `default`'s
-   `review` / `feature-development` skills if they don't fit the persona.
+   `dashboard` feature if it doesn't fit the persona.
 5. Add a row for the template to the root `README.md` table.
 
 ## Validate before pushing
@@ -109,10 +170,9 @@ bun test            # if the template ships tests
 
 CI runs these per template (`lint` / `typecheck` / `test`).
 
-A feature command is invoked as `ori <feature-id> <command-name> [args]` (the
-feature id is the namespace — there is no project-name prefix). To exercise a
-full boot, run `ori dev` in the template, since `ori build`/`run` are not
-built-ins yet.
+A command is invoked as `/name` on the chat surface (or by the agent as a tool
+call) — there is no feature-id or project-name prefix. To exercise a full boot,
+run `ori dev` in the template, since `ori build`/`run` are not built-ins yet.
 
 ## CI and merge rules (the repo precedent)
 

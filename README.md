@@ -11,12 +11,11 @@ examples/
   default/
     package.json      # workspace root (workspaces: features/*)
     tsconfig.json
-    biome.json
     bunfig.toml
     .gitignore
+    ori.md            # the persona (frontmatter + always-on system prompt)
     features/
-      system/   # always-on base prompt + feature-development skill
-      review/   # on-demand code/plan review skill
+      dashboard/  # api contribution: serves an HTML dashboard at GET /
 ```
 
 Down the line these are consumed by:
