@@ -12,19 +12,21 @@ ori init my-bd-agent --template=business-dev
 
 ## Features
 
-Working commands (real `cmd.ts`):
+Working commands (real `command.ts`):
 
-- `find-email` — `ori find-email run "<First Last>" <domain>`: generates the
+- `find-email` — `/find-email "<First Last>" <domain>`: generates the
   common corporate address patterns, then verifies candidates with a DNS MX
   lookup and an SMTP RCPT probe (**no email is ever sent**). Pure node — no
   API keys.
-- `research-lead` — `ori research-lead run "<name>" "<company>"`: produces a
-  structured research card (role, company facts, signals, talking points,
-  unknowns) via OpenRouter, clearly separating verified facts from inferences.
-- `draft-outreach` — `ori draft-outreach write <card-file>`: drafts a short
-  personalized email from a research card via OpenRouter, then runs local
-  personalization checks (must reference card specifics, length cap, no spam
-  phrasing). Output is a draft for a human to send — never sent automatically.
+- `research-lead` — `/research-lead "<name>" "<company>" [--out <file>]`:
+  produces a structured research card (role, company facts, signals, talking
+  points, unknowns) via OpenRouter, clearly separating verified facts from
+  inferences.
+- `draft-outreach` — `/draft-outreach <card-file> [--mention <tokens>] [--out <file>]`:
+  drafts a short personalized email from a research card via OpenRouter, then
+  runs local personalization checks (must reference card specifics, length
+  cap, no spam phrasing). Output is a draft for a human to send — never sent
+  automatically.
 
 Guidance skills:
 
