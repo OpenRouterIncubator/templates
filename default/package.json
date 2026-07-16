@@ -5,6 +5,7 @@
   "scripts": {
     "fix": "ori lint --fix",
     "lint": "ori lint",
+    "start": "ori start",
     "test": "bun test",
     "typecheck": "tsc --noEmit"
   },
