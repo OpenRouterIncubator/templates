@@ -1,4 +1,4 @@
-import { Layout } from './layout';
+import { Layout } from "./layout";
 
 interface Stat {
   label: string;
@@ -11,41 +11,61 @@ interface DashboardPageProps {
   stats: Stat[];
 }
 
-export const DashboardPage = ({ heading, message, stats }: DashboardPageProps): React.ReactNode => (
+export const DashboardPage = ({
+  heading,
+  message,
+  stats,
+}: DashboardPageProps): React.ReactNode => (
   <Layout title="Dashboard">
-    <header style={{ 
-      marginBottom: '2rem' 
-    }}>
-      <h1 style={{
-        margin: '0 0 0.5rem 0', 
-        fontSize: '1.5rem'
-      }}>
+    <header
+      style={{
+        marginBottom: "2rem",
+      }}
+    >
+      <h1
+        style={{
+          margin: "0 0 0.5rem 0",
+          fontSize: "1.5rem",
+        }}
+      >
         {heading}
       </h1>
-      <p style={{
-        margin: 0, color: '#666'
-      }}>
+      <p
+        style={{
+          margin: 0,
+          color: "#666",
+        }}
+      >
         {message}
       </p>
     </header>
-    <section style={{ 
-      marginBottom: '2rem' 
-    }}>
-      <h2 style={{
-        fontSize: '1rem', 
-        marginBottom: '1rem'
-      }}>
+    <section
+      style={{
+        marginBottom: "2rem",
+      }}
+    >
+      <h2
+        style={{
+          fontSize: "1rem",
+          marginBottom: "1rem",
+        }}
+      >
         Stats
       </h2>
-      <ul style={{
-        listStyle: 'none',
-        padding: 0,
-        margin: 0
-      }}>
+      <ul
+        style={{
+          listStyle: "none",
+          padding: 0,
+          margin: 0,
+        }}
+      >
         {stats.map((stat, i) => (
-          <li key={i} style={{
-            marginBottom: '0.5rem'
-          }}>
+          <li
+            key={i}
+            style={{
+              marginBottom: "0.5rem",
+            }}
+          >
             {stat.label}: <strong>{stat.value}</strong>
           </li>
         ))}
@@ -55,14 +75,14 @@ export const DashboardPage = ({ heading, message, stats }: DashboardPageProps): 
     <footer>
       <span
         style={{
-          background: '#000',
-          color: '#fff',
-          padding: '0.25rem 0.5rem',
-          fontSize: '0.875rem',
+          background: "#000",
+          color: "#fff",
+          padding: "0.25rem 0.5rem",
+          fontSize: "0.875rem",
         }}
       >
         Powered by Ori
       </span>
     </footer>
   </Layout>
-)
+);
