@@ -68,4 +68,45 @@ describe("interpretKey", () => {
       char: "z",
     });
   });
+
+  it("ignores SGR mouse press events", () => {
+    // \x1b[<0;10;20M after Ink strips the ESC prefix
+    expect(interpretKey("[<0;10;20M", key(), "ab", false)).toEqual({
+      kind: "ignore",
+    });
+  });
+
+  it("ignores SGR mouse release events", () => {
+    // \x1b[<0;10;20m after Ink strips the ESC prefix
+    expect(interpretKey("[<0;10;20m", key(), "ab", false)).toEqual({
+      kind: "ignore",
+    });
+  });
+
+  it("ignores SGR mouse scroll events", () => {
+    // \x1b[<64;10;20M after Ink strips the ESC prefix
+    expect(interpretKey("[<64;10;20M", key(), "ab", false)).toEqual({
+      kind: "ignore",
+    });
+  });
+
+  it("ignores X10 mouse events", () => {
+    // \x1b[M followed by 3 data bytes, after Ink strips the ESC prefix
+    expect(interpretKey("[M \x20!", key(), "ab", false)).toEqual({
+      kind: "ignore",
+    });
+  });
+
+  it("ignores mouse events even while busy", () => {
+    expect(interpretKey("[<0;10;20M", key(), "ab", true)).toEqual({
+      kind: "ignore",
+    });
+  });
+
+  it("still appends a literal '[' character", () => {
+    expect(interpretKey("[", key(), "ab", false)).toEqual({
+      kind: "append",
+      char: "[",
+    });
+  });
 });

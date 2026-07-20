@@ -14,20 +14,21 @@ ori init my-legal-agent --template=contract-review
 
 ## Features
 
-Working commands (real `cmd.ts`, file + OpenRouter):
+Working commands (real `command.ts`, file + OpenRouter), invocable as `/name`
+by a human or as a tool by the agent:
 
 - `review-contract` — analyze a contract file: document type, parties, key terms,
-  obligations, and risks (severity + recommended redline). `--format json` prints
-  the structured analysis. Run: `ori contract-review review-contract <file>`.
+  obligations, and risks (severity + recommended redline). `--format json`
+  returns the structured analysis. Run: `/review-contract <file> [--format json]`.
 - `redline` — propose specific edits to a contract in your party's favor,
   anchored to the exact text and rendered as track-changes markup
   (~~delete~~ / **replacement**) with per-edit rationale and severity. Never
   modifies the original file. Run:
-  `ori contract-review redline <file> [--for "<party>"] [--out <file>]`.
+  `/redline <file> [--for "<party>"] [--out <file>]`.
 - `answer-questionnaire` — draft answers to vendor questionnaires (security
   reviews, RFPs, due-diligence forms), grounded in a local archive of past
   Q&A. Run:
-  `ori contract-review answer-questionnaire <questions-file> [--archive <dir>]`.
+  `/answer-questionnaire <questions-file | "question"> [--archive <dir>]`.
 
 Guidance skills (the playbook the agent applies):
 

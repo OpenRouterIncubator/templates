@@ -1,5 +1,6 @@
+import type { ApiContribution } from "ori";
+
 import { getHtml } from "./lib/render";
-import type { ApiContribution } from 'ori'
 
 export const api: ApiContribution = {
   routes: {

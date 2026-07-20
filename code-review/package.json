@@ -15,6 +15,7 @@
   "scripts": {
     "check": "ultracite check",
     "fix": "ultracite fix",
+    "start": "ori start",
     "test": "bun test",
     "typecheck": "tsc --noEmit"
   },
