@@ -110,7 +110,7 @@ async function run(ctx: CommandContext<Args>): Promise<CommandResult> {
 
 // `name` is omitted: a feature-root command.ts defaults to the feature id,
 // which is already `answer-questionnaire`.
-const command: CommandContribution<Args> = {
+export const command: CommandContribution<Args> = {
   arguments: {
     archive: {
       default: "qa-archive",
@@ -130,5 +130,3 @@ const command: CommandContribution<Args> = {
     "Draft answers to questionnaires (security, RFP, due diligence) from a local Q&A archive.",
   run,
 };
-
-export default command;

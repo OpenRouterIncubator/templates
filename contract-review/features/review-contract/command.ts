@@ -95,7 +95,7 @@ async function run(ctx: CommandContext<Args>): Promise<CommandResult> {
 
 // `name` is omitted: a feature-root command.ts defaults to the feature id,
 // which is already `review-contract`.
-const command: CommandContribution<Args> = {
+export const command: CommandContribution<Args> = {
   arguments: {
     file: {
       description: "Path to the contract file to analyze",
@@ -114,5 +114,3 @@ const command: CommandContribution<Args> = {
     "Analyze a contract file and report key terms, obligations, and risks.",
   run,
 };
-
-export default command;

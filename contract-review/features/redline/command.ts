@@ -104,7 +104,7 @@ function resolveOut(out: string, cwd: string): string {
 
 // `name` is omitted: a feature-root command.ts defaults to the feature id,
 // which is already `redline`.
-const command: CommandContribution<Args> = {
+export const command: CommandContribution<Args> = {
   arguments: {
     file: {
       description: "Path to the contract file to redline",
@@ -127,5 +127,3 @@ const command: CommandContribution<Args> = {
     "Propose track-changes-style edits to a contract, in your party's favor.",
   run,
 };
-
-export default command;
