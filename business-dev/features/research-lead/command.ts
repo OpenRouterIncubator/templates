@@ -80,7 +80,7 @@ async function run(
 }
 
 // Feature-root `command.ts`: registers under the feature id, `/research-lead`.
-const command: CommandContribution<ResearchLeadArgs> = {
+export const command: CommandContribution<ResearchLeadArgs> = {
   arguments: {
     // Positional arguments are consumed in declaration order: name, company.
     name: {
@@ -103,5 +103,3 @@ const command: CommandContribution<ResearchLeadArgs> = {
   description: "Research a prospect and write a structured research card.",
   run,
 };
-
-export default command;

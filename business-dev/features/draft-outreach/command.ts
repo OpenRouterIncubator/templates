@@ -113,7 +113,7 @@ async function run(
 }
 
 // Feature-root `command.ts`: registers under the feature id, `/draft-outreach`.
-const command: CommandContribution<DraftOutreachArgs> = {
+export const command: CommandContribution<DraftOutreachArgs> = {
   arguments: {
     card: {
       description: "Path to the research card file",
@@ -136,5 +136,3 @@ const command: CommandContribution<DraftOutreachArgs> = {
     "Draft personalized outreach from a research card (for human review).",
   run,
 };
-
-export default command;

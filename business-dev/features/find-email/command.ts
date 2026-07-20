@@ -94,7 +94,7 @@ async function run(ctx: CommandContext<FindEmailArgs>): Promise<CommandResult> {
 }
 
 // Feature-root `command.ts`: registers under the feature id, `/find-email`.
-const command: CommandContribution<FindEmailArgs> = {
+export const command: CommandContribution<FindEmailArgs> = {
   arguments: {
     // Positional arguments are consumed in declaration order: name, domain.
     name: {
@@ -114,5 +114,3 @@ const command: CommandContribution<FindEmailArgs> = {
     "Find and verify a work email from a name + domain (DNS MX + SMTP probe).",
   run,
 };
-
-export default command;
