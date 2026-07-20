@@ -81,11 +81,12 @@ these as the authorities:
   Frontmatter MUST set `name` and `description`; the body is free-form prose. Add
   more skills under `skills/<name>/SKILL.md`.
 - `command.ts` — a deterministic command, invocable as `/name` by a human and
-  as a tool by the agent (same `run` either way). A standalone file MUST
-  `export default` the contribution: `features/<id>/command.ts` (name defaults
-  to the feature id) or `commands/<name>/command.ts` (name defaults to
-  `<name>`). Alternatively export `command` (single) or `commands` (array of
-  named entries) from `feature.ts`.
+  as a tool by the agent (same `run` either way). A standalone file MUST use a
+  **named `command` export** (`export const command = ...` — default exports
+  are rejected since ori #1138): `features/<id>/command.ts` (name defaults to
+  the feature id) or `commands/<name>/command.ts` (name defaults to `<name>`).
+  Alternatively export `command` (single) or `commands` (array of named
+  entries) from `feature.ts`.
 - `feature.ts` — the feature module entry. Only needed for `harness`, `chat`,
   `schedule`, `api`, or `prompt` contributions, or a multi-command `commands`
   array — those are its named exports (the closed set: `harness`, `chat`,
@@ -122,7 +123,7 @@ these as the authorities:
 >   readonly message?: string;
 > }
 >
-> const command = {
+> export const command = {
 >   description: "Summarize recent commits as a changelog",
 >   arguments: {
 >     days: {
@@ -145,8 +146,6 @@ these as the authorities:
 >     return { ok: true, message: out.stdout.trim() || "No commits." };
 >   },
 > };
->
-> export default command;
 > ```
 
 The example is the idiom, not the spec — it omits `emit`, `env`, `logger`,
