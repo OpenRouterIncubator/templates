@@ -108,7 +108,7 @@ async function patrol(
   };
 }
 
-const command = {
+export const command = {
   arguments: {
     repo: {
       description: "The repository to patrol (owner/name)",
@@ -125,8 +125,6 @@ const command = {
   run: (ctx: CommandContext<Args>) =>
     patrol(ctx.args.repo, ctx.args["stale-days"], ctx.env, ctx.log),
 };
-
-export default command;
 
 // Direct script entry for external triggers (GitHub Actions); not part of the
 // contribution, so writing to stdio here is fine.

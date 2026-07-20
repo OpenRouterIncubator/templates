@@ -108,7 +108,7 @@ async function run(ctx: CommandContext<Args>): Promise<CommandResult> {
   return { data: rcaData(rca), message: formatRca(rca), ok: true };
 }
 
-const command = {
+export const command = {
   arguments: {
     "max-files": {
       default: DEFAULT_MAX_FILES,
@@ -126,5 +126,3 @@ const command = {
     "Investigate a bug report: scan the repo and produce a root-cause analysis.",
   run,
 };
-
-export default command;

@@ -146,7 +146,7 @@ async function run(ctx: CommandContext<Args>): Promise<CommandResult> {
   };
 }
 
-const command = {
+export const command = {
   arguments: {
     format: {
       default: "text",
@@ -165,5 +165,3 @@ const command = {
     "Review a GitHub pull request and post inline comments with a verdict.",
   run,
 };
-
-export default command;

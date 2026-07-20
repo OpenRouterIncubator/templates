@@ -115,7 +115,7 @@ async function run(ctx: CommandContext<Args>): Promise<CommandResult> {
   };
 }
 
-const command = {
+export const command = {
   arguments: {
     author: {
       description: "Only PRs authored by this user",
@@ -151,5 +151,3 @@ const command = {
     "Search GitHub for pull requests, always org/repo-scoped and time-windowed.",
   run,
 };
-
-export default command;
