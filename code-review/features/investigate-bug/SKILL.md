@@ -8,6 +8,10 @@ description: Systematic root-cause analysis from a bug report — locate the cod
 Bridge "I have a bug report" and "I know the root cause" with static analysis and
 hypothesis-driven reasoning.
 
+When invoking the `/investigate-bug` command, pass the report as a single
+quoted argument (`/investigate-bug "crash on login when 2FA is on"`) —
+unquoted multi-word input keeps only the first word.
+
 ## Phases
 
 1. **Parse the report** — extract the symptom, the trigger, the expected vs.
