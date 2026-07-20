@@ -124,7 +124,7 @@ async function runApprove(
   };
 }
 
-const command: CommandContribution<BriefArgs> = {
+export const command: CommandContribution<BriefArgs> = {
   arguments: {
     action: {
       description:
@@ -161,5 +161,3 @@ const command: CommandContribution<BriefArgs> = {
     };
   },
 };
-
-export default command;

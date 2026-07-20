@@ -98,7 +98,7 @@ async function run(ctx: CommandContext<DraftArgs>): Promise<CommandResult> {
   };
 }
 
-const command: CommandContribution<DraftArgs> = {
+export const command: CommandContribution<DraftArgs> = {
   arguments: {
     brief: {
       description: "The approved brief file to draft from.",
@@ -115,5 +115,3 @@ const command: CommandContribution<DraftArgs> = {
   description: "Write a full content draft from an approved brief.",
   run,
 };
-
-export default command;

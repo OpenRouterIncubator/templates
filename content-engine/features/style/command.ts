@@ -79,7 +79,7 @@ async function run(ctx: CommandContext<StyleArgs>): Promise<CommandResult> {
   };
 }
 
-const command: CommandContribution<StyleArgs> = {
+export const command: CommandContribution<StyleArgs> = {
   arguments: {
     file: {
       description: "The draft file to lint.",
@@ -91,5 +91,3 @@ const command: CommandContribution<StyleArgs> = {
   description: "Lint a draft for AI-sounding prose (no network needed).",
   run,
 };
-
-export default command;
