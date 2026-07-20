@@ -203,8 +203,8 @@ run `ori dev` in the template, since `ori build`/`run` are not built-ins yet.
 
 ## CI and merge rules (the repo precedent)
 
-- CI (`.github/workflows/ci.yml`) auto-discovers every top-level directory with a
-  `package.json` and runs, per template, `lint` (ultracite + a commitlint PR-title
+- CI (`.github/workflows/ci.yml`) auto-discovers every top-level directory with
+  a `package.json` and runs, per template, `lint` (ultracite + a commitlint PR-title
   check), `typecheck`, and `test`. New templates are picked up automatically.
 - `main` is protected by a ruleset: changes land via **PR**, the `lint`,
   `typecheck`, and `test` checks must pass, **1 approval**, **signed/Verified
