@@ -56,12 +56,12 @@ these as the authorities, all matched to the installed CLI:
   README.md
   features/
     system/
-      package.json  # @ori-monorepo/system
       prompt.md     # always-on base system prompt (the persona)
-      index.ts      # export {};  — gives tsc an input so typecheck passes
     <skill-feature>/
-      package.json  # @ori-monorepo/<id>
       SKILL.md      # on-demand guidance (frontmatter: name, description)
+    <command-feature>/
+      package.json  # @ori-monorepo/<id> — only code-bearing features need one
+      command.ts    # default-exports the command contribution
 ```
 
 ## Contribution files you'll use
@@ -82,10 +82,6 @@ these as the authorities, all matched to the installed CLI:
   array — those are its named exports (the closed set: `harness`, `chat`,
   `schedule`, `api`, `prompt`, `command`, `commands`). A plain command needs
   just `command.ts`.
-
-The `generation` kind (`model`/`temperature`/`persona`) is **deferred** in the
-current Ori spec (RFC 0003.2 — defaults come from the harness), so don't add a
-`generation.ts`; put persona/working-style in `system/prompt.md` instead.
 
 > **Templates author plain TS that doesn't import Ori's types.** This is the
 > one idiom Ori's own docs do NOT cover (they say `import type ... from "ori"`;
@@ -144,31 +140,15 @@ current Ori spec (RFC 0003.2 — defaults come from the harness), so don't add a
 > export default command;
 > ```
 
-Command rules:
-
-- `name` is optional (slug `[a-z][a-z0-9-]*`); it defaults from the file or
-  feature path and is only required for entries in a `feature.ts` `commands`
-  array. `scopes` optionally lists capability scopes the invoker must hold.
-- The same `run` serves a human typing `/name` and the agent calling the
-  command as a tool — branch on `ctx.invoker.via` only when output should
-  differ.
-- No `console.*` or `process.stdout`/`stderr` in contributions (RFC 0011):
-  stream progress via `ctx.log`/`ctx.emit` and put the outcome in the returned
-  `message` (plus optional structured `data`).
-- Return `{ ok: false, message }` for expected failures; a thrown error is
-  caught and reported as `ok: false`.
-- The full `CommandContext` also carries `emit(event)`, `env`, and a `logger`
-  scoped to the feature — see `references/contract-intern.md` in the
-  materialized `feature-development` skill for the complete, current shape.
+The example is the idiom, not the spec — the complete, current command shape
+(naming, `scopes`, events, logging rules) lives in
+`references/contract-intern.md` of the materialized `feature-development`
+skill.
 
 Conventions:
 
-- Feature id = directory name. Each feature has its own `package.json` named
-  `@ori-monorepo/<id>`.
-- No `feature.json` unless you need `shadows` (override a same-named entry) or
-  `entry` (point a contribution at a non-canonical filename).
-- Prompt vs skill: persistent working style → `prompt.md`; situational,
-  capability-specific guidance → `SKILL.md`.
+- Feature id = directory name. Code-bearing features carry a `package.json`
+  (`@ori-monorepo/<id>`); skill-only features need just their `SKILL.md`.
 - Keep template skills **guidance-only**. Do not wire external infrastructure
   (HubSpot, Gmail, Slack, …) into a template — capture the playbook, not the
   integration.
@@ -180,8 +160,8 @@ Conventions:
    and rewrite `<template>/README.md`.
 3. Author the persona in `<template>/features/system/prompt.md`.
 4. Add capability skills as `<template>/features/<id>/` folders, each with a
-   `package.json` (`@ori-monorepo/<id>`) and a `SKILL.md`. Remove `default`'s
-   `dashboard` feature if it doesn't fit the persona.
+   `SKILL.md` (a `package.json` only when the feature ships code). Remove
+   `default`'s `dashboard` feature if it doesn't fit the persona.
 5. Add a row for the template to the root `README.md` table.
 
 ## Validate before pushing
