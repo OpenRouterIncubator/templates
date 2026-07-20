@@ -153,6 +153,9 @@ export const command: CommandContribution<BriefArgs> = {
       return runGenerate(ctx);
     }
     if (ctx.args.action === "approve") {
+      if (ctx.args.out !== undefined) {
+        ctx.log("note: --out only applies to generate; ignoring it");
+      }
       return runApprove(ctx);
     }
     return {
