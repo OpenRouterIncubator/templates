@@ -71,6 +71,12 @@ async function run(ctx: CommandContext<Args>): Promise<CommandResult> {
   }
 
   const { file, format } = ctx.args;
+  if (format !== "text" && format !== "json") {
+    return {
+      message: `unknown format: ${format} (use 'text' or 'json')`,
+      ok: false,
+    };
+  }
   const path = file.startsWith("/") ? file : `${ctx.cwd}/${file}`;
   const text = await readText(path);
   const warning = truncationWarning(text);
