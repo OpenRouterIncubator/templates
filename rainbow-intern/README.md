@@ -26,7 +26,7 @@ ori init my-intern --template=rainbow-intern
   `statusText`/`isAssistantDelta` in `events.ts`, and `interpretKey` in
   `input.ts` — are unit-tested.
 - `system` — always-on intern persona (small reviewable changes, follow
-  conventions, strict TypeScript) plus a `feature-development` skill.
+  conventions, strict TypeScript).
 - `review` — on-demand code/plan review guidance.
 
 ## The Ink / `.tsx` setup
