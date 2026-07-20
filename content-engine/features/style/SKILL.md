@@ -1,5 +1,5 @@
 ---
-name: human-voice
+name: style
 description: Write with a concrete human voice and strip AI-sounding prose; run the style check on every draft before it ships.
 ---
 
