@@ -30,4 +30,4 @@ jobs:
       - name: Patrol open PRs
         env:
           GITHUB_TOKEN: ${{ github.token }}
-        run: bun features/pr-patrol/cmd.ts --repo "${{ github.repository }}"
+        run: bun features/pr-patrol/command.ts --repo "${{ github.repository }}"

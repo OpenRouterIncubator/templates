@@ -4,7 +4,6 @@
 
 const DAY_MS = 86_400_000;
 const DATE_LEN = 10;
-const DEFAULT_SINCE_DAYS = 30;
 
 export interface SearchOptions {
   readonly author?: string;
@@ -14,74 +13,6 @@ export interface SearchOptions {
   readonly reviewer?: string;
   readonly sinceDays: number;
   readonly state?: "closed" | "open";
-}
-
-export function parseSearchArgs(args: readonly string[]): SearchOptions {
-  const options: {
-    author?: string;
-    involves?: string;
-    org?: string;
-    repo?: string;
-    reviewer?: string;
-    sinceDays: number;
-    state?: "closed" | "open";
-  } = { sinceDays: DEFAULT_SINCE_DAYS };
-  const setters = new Map<string, (value: string) => void>([
-    [
-      "--author",
-      (value) => {
-        options.author = value;
-      },
-    ],
-    [
-      "--involves",
-      (value) => {
-        options.involves = value;
-      },
-    ],
-    [
-      "--org",
-      (value) => {
-        options.org = value;
-      },
-    ],
-    [
-      "--repo",
-      (value) => {
-        options.repo = value;
-      },
-    ],
-    [
-      "--reviewer",
-      (value) => {
-        options.reviewer = value;
-      },
-    ],
-    [
-      "--since",
-      (value) => {
-        options.sinceDays = Number(value);
-      },
-    ],
-    [
-      "--state",
-      (value) => {
-        if (value === "open" || value === "closed") {
-          options.state = value;
-        }
-      },
-    ],
-  ]);
-  for (let i = 0; i < args.length; i += 1) {
-    const flag = args[i];
-    const handler = flag === undefined ? undefined : setters.get(flag);
-    const value = args[i + 1];
-    if (handler !== undefined && value !== undefined) {
-      handler(value);
-      i += 1;
-    }
-  }
-  return options;
 }
 
 export function hasScope(options: SearchOptions): boolean {
