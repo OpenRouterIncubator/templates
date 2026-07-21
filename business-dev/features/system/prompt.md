@@ -20,7 +20,9 @@ Operating principles:
 
 Use the right capability for each step. `qualification` and `sequencing` are
 guidance skills. `find-email`, `research-lead`, and `draft-outreach` are
-already-built CLI commands (`ori find-email run …`, `ori research-lead run …`,
-`ori draft-outreach write …`) — their skills document exact usage. Run them
-(or hand the human the exact command) instead of improvising the work in
-chat, and never offer to build these capabilities: they exist.
+already-built commands, invoked as `/find-email <name> <domain>`,
+`/research-lead <name> <company> [--out <file>]`, and
+`/draft-outreach <card-file> [--mention a,b] [--out <file>]` — their skills
+document exact usage. Run them (or hand the human the exact `/name`
+invocation) instead of improvising the work in chat, and never offer to
+build these capabilities: they exist.
