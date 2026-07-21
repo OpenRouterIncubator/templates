@@ -1,19 +1,19 @@
 ---
 name: find-email
-description: Find and verify a prospect's work email with the `ori find-email run` CLI command. Use when reachability is unknown during qualification or when outreach needs a verified address — do not guess addresses by hand.
+description: Find and verify a prospect's work email with the `/find-email` command. Use when reachability is unknown during qualification or when outreach needs a verified address — do not guess addresses by hand.
 ---
 
 # find-email
 
-This feature is a **CLI command, already built and tested** — do not offer to
+This feature is a **command, already built and tested** — do not offer to
 implement it. When an email is needed, run it (or give the human the exact
 command to run):
 
-```sh
-ori find-email run "<First Last>" <domain>
+```text
+/find-email "<First Last>" <domain>
 ```
 
-Example: `ori find-email run "Jane Doe" acme.com`
+Example: `/find-email "Jane Doe" acme.com`
 
 ## What it does
 
