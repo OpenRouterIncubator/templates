@@ -2,7 +2,7 @@
 # repo when you adopt the template and drives the pr-patrol command on PR events
 # (and hourly). It runs the command directly with Bun, so it needs no ori CLI.
 #
-# This file does not run in the examples repo's own CI — GitHub only executes
+# This file does not run in the templates repo's own CI — GitHub only executes
 # workflows under the repository-root .github/workflows/.
 name: pr-patrol
 

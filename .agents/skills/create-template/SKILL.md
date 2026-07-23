@@ -1,6 +1,6 @@
 ---
 name: create-template
-description: Create or update a persona template in the examples repo — scaffold the workspace, author features, run the checks, and open a PR. Use when adding a new template folder (e.g. customer-support) or editing an existing one.
+description: Create or update a persona template in the templates repo — scaffold the workspace, author features, run the checks, and open a PR. Use when adding a new template folder (e.g. customer-support) or editing an existing one.
 ---
 
 # Create a Persona Template

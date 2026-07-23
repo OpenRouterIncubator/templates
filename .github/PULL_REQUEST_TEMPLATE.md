@@ -6,10 +6,10 @@ Written by an agent, read by a human. Optimize for the reviewer's time.
 - Be calibrated, not confident: surface assumptions, guesses, and anything a human must double-check.
 - Show evidence, not promises: paste the real command(s) and their actual output.
 - Make every file reference a CLICKABLE link into this PR's diff so the reviewer lands on it in one click:
-  [`path/to/file.ts`](https://github.com/OpenRouterIncubator/examples/pull/<PR>/files#diff-<sha256-of-the-path>)
+  [`path/to/file.ts`](https://github.com/OpenRouterIncubator/templates/pull/<PR>/files#diff-<sha256-of-the-path>)
   Use the file-level `#diff-<sha256-of-the-path>` anchor with NO R<line>: it keeps working as you push more commits, whereas added-line numbers shift on every push and go stale. Optionally append R<line> (right side) or L<line> (left) to the SINGLE "start here" pointer if an exact entry line helps.
   Get the hash with: printf '%s' 'path/to/file.ts' | shasum -a 256 ; get <PR> with: gh pr view --json number.
-  Fallback if you don't know the PR number yet: a commit permalink https://github.com/OpenRouterIncubator/examples/blob/<commit-sha>/path/to/file.ts#L10-L20.
+  Fallback if you don't know the PR number yet: a commit permalink https://github.com/OpenRouterIncubator/templates/blob/<commit-sha>/path/to/file.ts#L10-L20.
 - Always include the Diagram. Delete any other section/bullet that's empty, EXCEPT Security (leave an explicit "None" so the reviewer knows you checked).
 - Aim for an under-2-minute read.
 - In How I verified, give functional proof (real output) — not lint/typecheck/test commands; those belong in the Checklist, and CI re-runs them.
@@ -48,10 +48,10 @@ file-level #diff-<hash> anchor so the links don't break as you push more commits
 -->
 
 1. **<stop title>** —
-   [`path/to/file.ts`](https://github.com/OpenRouterIncubator/examples/pull/<PR>/files#diff-<sha256-of-the-path>) — what
+   [`path/to/file.ts`](https://github.com/OpenRouterIncubator/templates/pull/<PR>/files#diff-<sha256-of-the-path>) — what
    this chunk does and what to look at. _(start here / critical path)_
 2. **<stop title>** —
-   [`path/to/other.ts`](https://github.com/OpenRouterIncubator/examples/pull/<PR>/files#diff-<sha256-of-the-path>) — what
+   [`path/to/other.ts`](https://github.com/OpenRouterIncubator/templates/pull/<PR>/files#diff-<sha256-of-the-path>) — what
    changed and why.
 
 ## Diagram
@@ -87,7 +87,7 @@ Fill in the branch, template, and concrete steps. Delete for docs-only PRs.
 -->
 
 ```text
-Check out the `<branch>` branch of OpenRouterIncubator/examples and `cd <template>`.
+Check out the `<branch>` branch of OpenRouterIncubator/templates and `cd <template>`.
 Install and exercise the change:
   bun install
   bun test
