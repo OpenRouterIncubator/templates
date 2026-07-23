@@ -2,5 +2,8 @@
   "name": "dashboard",
   "private": true,
   "type": "module",
-  "dependencies": {}
+  "dependencies": {
+    "react": "19.2.7",
+    "react-dom": "19.2.7"
+  }
 }

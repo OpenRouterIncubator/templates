@@ -1,4 +1,4 @@
-# examples — agent guide
+# templates — agent guide
 
 This repo holds **persona templates** for
 [Ori](https://github.com/OpenRouterIncubator/ori). Each top-level folder (e.g.

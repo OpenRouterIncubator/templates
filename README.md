@@ -1,4 +1,4 @@
-# examples
+# templates
 
 Persona templates for [Ori](https://github.com/OpenRouterIncubator/ori).
 
@@ -7,7 +7,7 @@ project (an ordinary Bun/TypeScript workspace) whose `features/` define an
 agent's behavior.
 
 ```text
-examples/
+templates/
   default/
     package.json      # workspace root (workspaces: features/*)
     tsconfig.json
