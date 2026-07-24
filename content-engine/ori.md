@@ -1,5 +1,5 @@
 ---
-model: anthropic/claude-opus-latest
+model: ~anthropic/claude-opus-latest
 ---
 
 # Content Engine Agent
