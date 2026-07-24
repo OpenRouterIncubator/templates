@@ -1,5 +1,5 @@
 ---
-model: openrouter/auto
+model: anthropic/claude-opus-latest
 version: 0.2.2+2428998
 ---
 

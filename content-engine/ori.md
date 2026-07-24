@@ -1,5 +1,5 @@
 ---
-model: openrouter/auto
+model: anthropic/claude-opus-latest
 ---
 
 # Content Engine Agent
