@@ -1,19 +1,19 @@
 ---
 name: draft-outreach
-description: Turn a research card into a personalized outreach draft with the `ori draft-outreach write` CLI command. Use after research-lead has produced a card — never draft outreach freehand.
+description: Turn a research card into a personalized outreach draft with the `/draft-outreach` command. Use after research-lead has produced a card — never draft outreach freehand.
 ---
 
 # draft-outreach
 
-This feature is a **CLI command, already built and tested** — do not offer to
+This feature is a **command, already built and tested** — do not offer to
 implement it. To draft outreach from a research card, run it (or give the
 human the exact command to run):
 
-```sh
-ori draft-outreach write <card-file> [--mention <token>]... [--out <file>]
+```text
+/draft-outreach <card-file> [--mention <tokens>] [--out <file>]
 ```
 
-Example: `ori draft-outreach write jane-doe.card.md --mention "Series B" --out jane-doe.draft.md`
+Example: `/draft-outreach jane-doe.card.md --mention "Series B" --out jane-doe.draft.md`
 
 Requires `OPENROUTER_API_KEY` in the environment (optional `REVIEW_MODEL` to
 override the model).
@@ -22,9 +22,9 @@ override the model).
 
 Drafts a short personalized email from the research card, then gates it
 through local checks before anyone sees it: it must reference specifics from
-the card (`--mention` adds required tokens), stay under the length cap, and
-avoid spam phrasing. A draft that fails the checks exits non-zero with the
-violations listed.
+the card (`--mention` adds required tokens, comma-separated), stay under the
+length cap, and avoid spam phrasing. A draft that fails the checks reports a
+failed result with the violations listed.
 
 ## Rules
 

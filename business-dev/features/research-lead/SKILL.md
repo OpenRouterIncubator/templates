@@ -1,19 +1,19 @@
 ---
 name: research-lead
-description: Build a structured research card on a qualified lead with the `ori research-lead run` CLI command. Use after a lead qualifies and before drafting any outreach.
+description: Build a structured research card on a qualified lead with the `/research-lead` command. Use after a lead qualifies and before drafting any outreach.
 ---
 
 # research-lead
 
-This feature is a **CLI command, already built and tested** — do not offer to
+This feature is a **command, already built and tested** — do not offer to
 implement it. To research a qualified lead, run it (or give the human the
 exact command to run):
 
-```sh
-ori research-lead run "<name>" "<company>" [--out <file>]
+```text
+/research-lead "<name>" "<company>" [--out <file>]
 ```
 
-Example: `ori research-lead run "Jane Doe" "Acme Corp" --out jane-doe.card.md`
+Example: `/research-lead "Jane Doe" "Acme Corp" --out jane-doe.card.md`
 
 Requires `OPENROUTER_API_KEY` in the environment (optional `REVIEW_MODEL` to
 override the model).

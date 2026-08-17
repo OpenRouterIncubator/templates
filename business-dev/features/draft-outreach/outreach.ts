@@ -1,5 +1,5 @@
 // Pure cold-outreach logic: validate a draft against the rules that separate a
-// personalized note from spam. No I/O. Used by cmd.ts to gate model output
+// personalized note from spam. No I/O. Used by command.ts to gate model output
 // before a human ever sees it.
 
 export interface Draft {
