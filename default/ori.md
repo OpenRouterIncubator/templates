@@ -1,5 +1,7 @@
 ---
 model: ~anthropic/claude-opus-latest
+features:
+  - github.com/OpenRouterLabs/ori-feature-catalog
 version: 0.2.2+2428998
 ---
 
