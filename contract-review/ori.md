@@ -1,5 +1,5 @@
 ---
-model: ~anthropic/claude-opus-latest
+model: anthropic/claude-fable-5.1
 ---
 
 # Contract Review Agent

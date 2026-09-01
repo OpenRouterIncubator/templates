@@ -1,5 +1,5 @@
 ---
-model: ~anthropic/claude-opus-latest
+model: anthropic/claude-fable-5.1
 version: 0.2.2+2428998
 ---
 
