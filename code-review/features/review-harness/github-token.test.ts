@@ -1,44 +1,12 @@
-import { afterEach, describe, expect, it, mock } from "bun:test";
+import { describe, expect, it } from "bun:test";
 import { EventEmitter } from "node:events";
 
-// `github-token.ts` captures `promisify(execFile)` and `spawn` at import time,
-// so the child_process mock must be installed before the module is imported.
-// Each test drives the fakes synchronously to exercise the gh + git paths
-// without spawning real processes or touching the network.
+import { type ChildProcessEdge, resolveGitHubToken } from "./github-token.ts";
 
-type ExecFileCallback = (
-  error: Error | null,
-  result: { stdout: string; stderr: string }
-) => void;
-
-let execFileImpl: (
-  file: string,
-  args: string[],
-  options: unknown,
-  callback: ExecFileCallback
-) => void;
-
-let spawnImpl: (file: string, args: string[], options: unknown) => FakeChild;
-
-mock.module("node:child_process", () => ({
-  execFile: (
-    file: string,
-    args: string[],
-    options: unknown,
-    callback: ExecFileCallback
-  ) => execFileImpl(file, args, options, callback),
-  spawn: (file: string, args: string[], options: unknown) =>
-    spawnImpl(file, args, options),
-}));
-
-// `github-token.ts` binds `promisify(execFile)` and `spawn` at module-eval
-// time. Other suites (e.g. pipeline.test.ts) import it transitively before
-// this file runs, so it is already cached against the real child_process. A
-// query-string specifier forces a fresh evaluation that picks up the mock
-// above regardless of import order.
-const { resolveGitHubToken } = (await import(
-  `./github-token.ts?mock=${Date.now()}`
-)) as typeof import("./github-token.ts");
+// The process edge is injected, so these fakes are passed straight in. Nothing
+// here mocks `node:child_process`: that mock is process-global and replaces the
+// module for every suite, which is how `execFileSync` went missing from
+// local-diff.test.ts and pipeline.test.ts. See `ChildProcessEdge`.
 
 class FakeStdin {
   written = "";
@@ -60,33 +28,34 @@ class FakeChild extends EventEmitter {
   }
 }
 
-/** Make `promisify(execFile)` resolve with the given stdout. */
-function execFileResolves(stdout: string) {
-  execFileImpl = (_file, _args, _options, callback) => {
-    callback(null, { stdout, stderr: "" });
-  };
+/** An edge whose `gh auth token` call resolves with the given stdout. */
+function ghResolves(stdout: string): ChildProcessEdge["runCommand"] {
+  return () => Promise.resolve({ stdout });
 }
 
-/** Make `promisify(execFile)` reject. */
-function execFileRejects() {
-  execFileImpl = (_file, _args, _options, callback) => {
-    callback(new Error("gh not installed"), { stdout: "", stderr: "" });
-  };
+/** An edge whose `gh auth token` call rejects, as when gh is not installed. */
+function ghRejects(): ChildProcessEdge["runCommand"] {
+  return () => Promise.reject(new Error("gh not installed"));
 }
 
-afterEach(() => {
-  mock.restore();
-});
+function edgeOf(
+  runCommand: ChildProcessEdge["runCommand"],
+  child: FakeChild,
+  drive: (child: FakeChild) => void = () => undefined
+): ChildProcessEdge {
+  return {
+    runCommand,
+    startCommand: () => {
+      drive(child);
+      return child;
+    },
+  };
+}
 
 describe("resolveGitHubToken", () => {
   it("returns a GITHUB_TOKEN from the environment without shelling out", async () => {
-    execFileImpl = () => {
-      throw new Error("should not be called");
-    };
-    spawnImpl = () => {
-      throw new Error("should not be called");
-    };
-
+    // No edge passed, so this also covers the default wiring to node's own
+    // child_process: an env hit must never reach it.
     await expect(
       resolveGitHubToken({ GITHUB_TOKEN: "  env-token  " })
     ).resolves.toBe("env-token");
@@ -99,110 +68,91 @@ describe("resolveGitHubToken", () => {
   });
 
   it("ignores blank env values and uses the gh CLI token", async () => {
-    execFileResolves("cli-token\n");
+    const edge = edgeOf(ghResolves("cli-token\n"), new FakeChild());
 
     await expect(
-      resolveGitHubToken({ GITHUB_TOKEN: "   ", GH_TOKEN: "" })
+      resolveGitHubToken({ GITHUB_TOKEN: "   ", GH_TOKEN: "" }, edge)
     ).resolves.toBe("cli-token");
   });
 
   it("treats empty gh CLI output as no token and falls through to git", async () => {
-    execFileResolves("   \n");
-
     const child = new FakeChild();
-    // The module calls spawn only after awaiting the gh CLI, so drive the fake
-    // child from inside spawnImpl — its listeners are attached synchronously in
-    // the promise executor that runs before spawn returns.
-    spawnImpl = () => {
+    // The module attaches its listeners synchronously in the promise executor
+    // that runs before startCommand returns, so drive the child from a
+    // microtask scheduled as it is handed over.
+    const edge = edgeOf(ghResolves("   \n"), child, (spawned) => {
       queueMicrotask(() => {
-        child.stdout.emit("data", "protocol=https\nhost=github.com\n");
-        child.stdout.emit("data", "username=x\npassword=git-token\n");
-        child.emit("close");
+        spawned.stdout.emit("data", "protocol=https\nhost=github.com\n");
+        spawned.stdout.emit("data", "username=x\npassword=git-token\n");
+        spawned.emit("close");
       });
-      return child;
-    };
+    });
 
-    await expect(resolveGitHubToken({})).resolves.toBe("git-token");
+    await expect(resolveGitHubToken({}, edge)).resolves.toBe("git-token");
     expect(child.stdin?.written).toBe("protocol=https\nhost=github.com\n\n");
     expect(child.stdin?.ended).toBe(true);
   });
 
   it("falls through to git credential when the gh CLI errors", async () => {
-    execFileRejects();
-
     const child = new FakeChild();
-    spawnImpl = () => {
+    const edge = edgeOf(ghRejects(), child, (spawned) => {
       queueMicrotask(() => {
-        child.stdout.emit("data", "password=fallback-token\n");
-        child.emit("close");
+        spawned.stdout.emit("data", "password=fallback-token\n");
+        spawned.emit("close");
       });
-      return child;
-    };
+    });
 
-    await expect(resolveGitHubToken({})).resolves.toBe("fallback-token");
+    await expect(resolveGitHubToken({}, edge)).resolves.toBe("fallback-token");
   });
 
   it("returns undefined when git credential output has no password", async () => {
-    execFileRejects();
-
     const child = new FakeChild();
-    spawnImpl = () => {
+    const edge = edgeOf(ghRejects(), child, (spawned) => {
       queueMicrotask(() => {
-        child.stdout.emit("data", "protocol=https\nhost=github.com\n");
-        child.emit("close");
+        spawned.stdout.emit("data", "protocol=https\nhost=github.com\n");
+        spawned.emit("close");
       });
-      return child;
-    };
+    });
 
-    await expect(resolveGitHubToken({})).resolves.toBeUndefined();
+    await expect(resolveGitHubToken({}, edge)).resolves.toBeUndefined();
   });
 
   it("returns undefined when the git credential process errors", async () => {
-    execFileRejects();
-
     const child = new FakeChild();
-    spawnImpl = () => {
-      queueMicrotask(() => child.emit("error", new Error("spawn ENOENT")));
-      return child;
-    };
+    const edge = edgeOf(ghRejects(), child, (spawned) => {
+      queueMicrotask(() => spawned.emit("error", new Error("spawn ENOENT")));
+    });
 
-    await expect(resolveGitHubToken({})).resolves.toBeUndefined();
+    await expect(resolveGitHubToken({}, edge)).resolves.toBeUndefined();
   });
 
   it("ignores a late close after an error (single settle)", async () => {
-    execFileRejects();
-
     const child = new FakeChild();
-    spawnImpl = () => {
+    const edge = edgeOf(ghRejects(), child, (spawned) => {
       queueMicrotask(() => {
-        child.emit("error", new Error("boom"));
+        spawned.emit("error", new Error("boom"));
         // A close arriving after the error must not change the resolved value.
-        child.stdout.emit("data", "password=ignored\n");
-        child.emit("close");
+        spawned.stdout.emit("data", "password=ignored\n");
+        spawned.emit("close");
       });
-      return child;
-    };
+    });
 
-    await expect(resolveGitHubToken({})).resolves.toBeUndefined();
+    await expect(resolveGitHubToken({}, edge)).resolves.toBeUndefined();
   });
 
   it("resolves undefined and kills the child when stdin is unavailable", async () => {
-    execFileRejects();
-
     const child = new FakeChild();
     child.stdin = null;
-    spawnImpl = () => child;
+    const edge = edgeOf(ghRejects(), child);
 
-    await expect(resolveGitHubToken({})).resolves.toBeUndefined();
+    await expect(resolveGitHubToken({}, edge)).resolves.toBeUndefined();
     expect(child.killed).toBe(true);
   });
 
   it("kills the child and resolves undefined when it never closes (timeout)", async () => {
-    execFileRejects();
-
-    const child = new FakeChild();
     // Never emit close/error; let the bounding timer fire to settle undefined.
-    spawnImpl = () => child;
+    const child = new FakeChild();
+    const edge = edgeOf(ghRejects(), child);
 
     const realSetTimeout = globalThis.setTimeout;
     // Fire the bounding timer on a later microtask (after the executor finishes
@@ -213,7 +163,7 @@ describe("resolveGitHubToken", () => {
     }) as typeof setTimeout;
 
     try {
-      await expect(resolveGitHubToken({})).resolves.toBeUndefined();
+      await expect(resolveGitHubToken({}, edge)).resolves.toBeUndefined();
       expect(child.killed).toBe(true);
     } finally {
       globalThis.setTimeout = realSetTimeout;
