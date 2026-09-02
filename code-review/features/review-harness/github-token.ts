@@ -9,10 +9,49 @@ const run = promisify(execFile);
 const TIMEOUT_MS = 5000;
 const PASSWORD_LINE = /(?:^|\n)password=(.+)/;
 
+// Only the parts of a spawned child this module touches, so a test can pass a
+// plain fake instead of a real ChildProcess.
+export interface CredentialChild {
+  kill(): void;
+  on(event: "error" | "close", listener: () => void): unknown;
+  readonly stdin: { write(chunk: string): void; end(): void } | null;
+  readonly stdout: {
+    on(event: "data", listener: (chunk: unknown) => void): unknown;
+  } | null;
+}
+
+// The process edge, injected so tests drive it directly. Mocking
+// `node:child_process` is the alternative and it is a trap: the factory's
+// return value REPLACES the module for every suite in the process, so a mock
+// covering only `execFile`/`spawn` deletes `execFileSync` out from under
+// local-diff.test.ts and pipeline.test.ts, and wrapping `execFile` loses the
+// `util.promisify.custom` that makes `promisify(execFile)` resolve
+// `{ stdout, stderr }` rather than a bare string.
+export interface ChildProcessEdge {
+  readonly runCommand: (
+    file: string,
+    args: string[],
+    options: { timeout: number }
+  ) => Promise<{ stdout: string }>;
+  readonly startCommand: (
+    file: string,
+    args: string[],
+    options: { stdio: ["pipe", "pipe", "ignore"] }
+  ) => CredentialChild;
+}
+
+const nodeChildProcess: ChildProcessEdge = {
+  runCommand: run,
+  startCommand: spawn,
+};
+
 export async function resolveGitHubToken(
-  env: Record<string, string | undefined>
+  env: Record<string, string | undefined>,
+  edge: ChildProcessEdge = nodeChildProcess
 ): Promise<string | undefined> {
-  return fromEnv(env) ?? (await ghCliToken()) ?? (await gitCredentialToken());
+  return (
+    fromEnv(env) ?? (await ghCliToken(edge)) ?? (await gitCredentialToken(edge))
+  );
 }
 
 function fromEnv(env: Record<string, string | undefined>): string | undefined {
@@ -25,9 +64,9 @@ function fromEnv(env: Record<string, string | undefined>): string | undefined {
   return;
 }
 
-async function ghCliToken(): Promise<string | undefined> {
+async function ghCliToken(edge: ChildProcessEdge): Promise<string | undefined> {
   try {
-    const { stdout } = await run("gh", ["auth", "token"], {
+    const { stdout } = await edge.runCommand("gh", ["auth", "token"], {
       timeout: TIMEOUT_MS,
     });
     const token = stdout.trim();
@@ -38,9 +77,11 @@ async function ghCliToken(): Promise<string | undefined> {
 }
 
 // Ask git's configured credential helper for a github.com password/token.
-function gitCredentialToken(): Promise<string | undefined> {
+function gitCredentialToken(
+  edge: ChildProcessEdge
+): Promise<string | undefined> {
   return new Promise((resolve) => {
-    const child = spawn("git", ["credential", "fill"], {
+    const child = edge.startCommand("git", ["credential", "fill"], {
       stdio: ["pipe", "pipe", "ignore"],
     });
     let output = "";
