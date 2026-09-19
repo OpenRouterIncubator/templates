@@ -7,8 +7,7 @@ const StateStoreFault = {
   ProbeTimeout: "probe_timeout",
   ReadFailed: "read_failed",
 } as const;
-type StateStoreFault =
-  (typeof StateStoreFault)[keyof typeof StateStoreFault];
+type StateStoreFault = (typeof StateStoreFault)[keyof typeof StateStoreFault];
 
 export interface InternStatus {
   readonly featureId: string;
