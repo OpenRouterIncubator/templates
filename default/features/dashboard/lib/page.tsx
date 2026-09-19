@@ -62,9 +62,9 @@ const StatsSection = ({
         margin: 0,
       }}
     >
-      {stats.map((stat, i) => (
+      {stats.map((stat) => (
         <li
-          key={i}
+          key={stat.label}
           style={{
             marginBottom: "0.5rem",
           }}

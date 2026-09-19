@@ -1,18 +1,34 @@
 import type { ApiContribution } from "ori";
 
 import { getHtml } from "./lib/render";
+import {
+  dashboardLogLine,
+  readInternStatus,
+  statusHttpCode,
+} from "./lib/status";
+
+const STARTED_AT_MS = Date.now();
 
 export const api: ApiContribution = {
   routes: {
-    "GET /": (req: Request, ctx) => {
-      ctx.logger.info("Dashboard accessed");
+    "GET /": async (_req: Request, ctx) => {
+      const uptimeSeconds = Math.floor((Date.now() - STARTED_AT_MS) / 1000);
+      const status = await readInternStatus({ ctx, uptimeSeconds });
 
-      const html = getHtml(req);
+      const line = dashboardLogLine(status);
+      if (line.level === "error") {
+        ctx.logger.error(line.message, undefined, line.fields);
+      } else {
+        ctx.logger.info(line.message, line.fields);
+      }
+
+      const html = getHtml(status);
       // Wrap with doctype since React doesn't include it
       const fullHtml = `<!DOCTYPE html>\n${html}`;
 
       return new Response(fullHtml, {
-        headers: { "Content-Type": "text/html" },
+        headers: { "Content-Type": "text/html; charset=utf-8" },
+        status: statusHttpCode(status.health),
       });
     },
   },
