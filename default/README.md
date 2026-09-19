@@ -15,10 +15,6 @@ ori init my-intern --template=default
 
 ## dashboard
 
-`GET /` reports what this intern knows about itself: which feature answered, how
-long the runtime has been up, and whether the intern's own state store opens and
-answers. A store that does not answer is served as `503`, so an uptime check
-pointed at the page fails when the intern is not fully healthy.
+`GET /` reports what this intern knows about itself: which feature answered, how long the runtime has been up, and whether the intern's own state store opens and answers. A store that does not answer is served as `503`, so an uptime check pointed at the page fails when the intern is not fully healthy.
 
-The page renders nothing about the request that asked for it. Credentials reach
-an intern in request headers, so the route must never echo them back.
+The page renders nothing about the request that asked for it. Credentials reach an intern in request headers, so the route must never echo them back.

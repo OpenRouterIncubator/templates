@@ -1,7 +1,8 @@
 import { renderToString } from "react-dom/server";
 
-import { DashboardPage } from "./page";
 import type { InternStatus } from "./status";
+
+import { DashboardPage } from "./page";
 
 const MESSAGE: Record<InternStatus["health"], string> = {
   degraded: "This intern is serving, but its own state store is not answering",

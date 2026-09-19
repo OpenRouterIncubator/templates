@@ -2,7 +2,7 @@ import type { ApiContribution } from "ori";
 
 import { getHtml } from "./lib/render";
 import {
-  internStatusLogFields,
+  dashboardLogLine,
   readInternStatus,
   statusHttpCode,
 } from "./lib/status";
@@ -15,7 +15,12 @@ export const api: ApiContribution = {
       const uptimeSeconds = Math.floor((Date.now() - STARTED_AT_MS) / 1000);
       const status = await readInternStatus({ ctx, uptimeSeconds });
 
-      ctx.logger.info("Dashboard accessed", internStatusLogFields(status));
+      const line = dashboardLogLine(status);
+      if (line.level === "error") {
+        ctx.logger.error(line.message, undefined, line.fields);
+      } else {
+        ctx.logger.info(line.message, line.fields);
+      }
 
       const html = getHtml(status);
       // Wrap with doctype since React doesn't include it

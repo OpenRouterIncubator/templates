@@ -1,15 +1,11 @@
-import type { StatusContext } from "./status";
-
 import { describe, expect, test } from "bun:test";
 
-import {
-  internStatusLogFields,
-  readInternStatus,
-  statusHttpCode,
-} from "./status";
+import type { StatusContext } from "./status";
+
+import { dashboardLogLine, readInternStatus, statusHttpCode } from "./status";
 
 const stateStore = (
-  get: (key: string) => Promise<string | undefined>,
+  get: (key: string) => Promise<string | undefined>
 ): NonNullable<StatusContext["stores"]>["state"] => ({
   exec: () => Promise.resolve(),
   get,
@@ -19,7 +15,7 @@ const stateStore = (
 });
 
 const contextWithStore = (
-  get: (key: string) => Promise<string | undefined>,
+  get: (key: string) => Promise<string | undefined>
 ): StatusContext => {
   const state = stateStore(get);
   return {
@@ -51,13 +47,15 @@ describe("readInternStatus", () => {
     expect(status.health).toBe("degraded");
     expect(status.stateStore).toBeUndefined();
     expect(status.stateStoreError).toBe(
-      "the intern's state store did not open",
+      "the intern's state store did not open"
     );
   });
 
   test("is degraded and carries the cause when the state store rejects", async () => {
     const status = await readInternStatus({
-      ctx: contextWithStore(() => Promise.reject(new Error("database is locked"))),
+      ctx: contextWithStore(() =>
+        Promise.reject(new Error("database is locked"))
+      ),
       uptimeSeconds: 7,
     });
 
@@ -76,7 +74,7 @@ describe("readInternStatus", () => {
     expect(status.health).toBe("degraded");
     expect(status.stateStore).toBe("state");
     expect(status.stateStoreError).toBe(
-      "the intern's state store did not answer within 10ms",
+      "the intern's state store did not answer within 10ms"
     );
   });
 
@@ -87,7 +85,9 @@ describe("readInternStatus", () => {
         uptimeSeconds: 0,
       }),
       readInternStatus({
-        ctx: contextWithStore(() => Promise.reject(new Error("database is locked"))),
+        ctx: contextWithStore(() =>
+          Promise.reject(new Error("database is locked"))
+        ),
         uptimeSeconds: 0,
       }),
       readInternStatus({
@@ -102,7 +102,7 @@ describe("readInternStatus", () => {
         notOpen.stateStoreError,
         rejected.stateStoreError,
         hung.stateStoreError,
-      ]).size,
+      ]).size
     ).toBe(3);
   });
 
@@ -117,49 +117,80 @@ describe("readInternStatus", () => {
       "health",
       "stateStore",
       "stateStoreError",
+      "stateStoreFault",
       "uptimeSeconds",
     ]);
   });
 });
 
-describe("internStatusLogFields", () => {
-  test("names every field it logs and omits the ones with no value", async () => {
-    const healthy = internStatusLogFields(
+describe("dashboardLogLine", () => {
+  test("logs a healthy read at info, naming every field it carries", async () => {
+    const line = dashboardLogLine(
       await readInternStatus({
         ctx: contextWithStore(() => Promise.resolve(undefined)),
         uptimeSeconds: 3,
-      }),
+      })
     );
 
-    expect(Object.keys(healthy).sort()).toEqual([
+    expect(line.level).toBe("info");
+    expect(Object.keys(line.fields).sort()).toEqual([
       "feature_id",
       "health",
       "state_store",
       "uptime_seconds",
     ]);
-    expect(healthy.health).toBe("ok");
-    expect(healthy.state_store).toBe("state");
-    expect(healthy.uptime_seconds).toBe(3);
+    expect(line.fields.health).toBe("ok");
+    expect(line.fields.state_store).toBe("state");
+    expect(line.fields.uptime_seconds).toBe(3);
   });
 
-  test("carries the cause when the state store never opened", async () => {
-    const fields = internStatusLogFields(
+  test("logs a degraded read at error so a monitor can see it", async () => {
+    const line = dashboardLogLine(
       await readInternStatus({
         ctx: { featureId: "dashboard", stores: undefined },
         uptimeSeconds: 3,
-      }),
+      })
     );
 
-    expect(Object.keys(fields).sort()).toEqual([
+    expect(line.level).toBe("error");
+    expect(Object.keys(line.fields).sort()).toEqual([
       "feature_id",
       "health",
       "state_store_error",
+      "state_store_fault",
       "uptime_seconds",
     ]);
-    expect(fields.health).toBe("degraded");
-    expect(fields.state_store_error).toBe(
-      "the intern's state store did not open",
+    expect(line.fields.state_store_fault).toBe("did_not_open");
+    expect(line.fields.state_store_error).toBe(
+      "the intern's state store did not open"
     );
+  });
+
+  test("groups the three state-store faults under three distinct values", async () => {
+    const [notOpen, rejected, hung] = await Promise.all([
+      readInternStatus({
+        ctx: { featureId: "dashboard", stores: undefined },
+        uptimeSeconds: 0,
+      }),
+      readInternStatus({
+        ctx: contextWithStore(() => Promise.reject(new Error("locked"))),
+        uptimeSeconds: 0,
+      }),
+      readInternStatus({
+        ctx: contextWithStore(() => new Promise<string | undefined>(() => {})),
+        probeTimeoutMs: 10,
+        uptimeSeconds: 0,
+      }),
+    ]);
+
+    expect([
+      dashboardLogLine(notOpen).fields.state_store_fault,
+      dashboardLogLine(rejected).fields.state_store_fault,
+      dashboardLogLine(hung).fields.state_store_fault,
+    ]).toEqual(["did_not_open", "read_failed", "probe_timeout"]);
+    expect(
+      new Set([notOpen, rejected, hung].map((s) => dashboardLogLine(s).level))
+    ).toEqual(new Set(["error"]));
   });
 });
 
