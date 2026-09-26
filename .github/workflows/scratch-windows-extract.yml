@@ -52,8 +52,11 @@ jobs:
         run: |
           Set-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\AppModelUnlock' -Name AllowDevelopmentWithoutDevLicense -Value 0
           $password = 'P' + [guid]::NewGuid().ToString('N') + '!a1'
-          net user oriprobe $password /add | Out-Null
-          $credential = New-Object System.Management.Automation.PSCredential('oriprobe', (ConvertTo-SecureString $password -AsPlainText -Force))
+          $secure = ConvertTo-SecureString $password -AsPlainText -Force
+          New-LocalUser -Name oriprobe -Password $secure -PasswordNeverExpires | Out-Null
+          Add-LocalGroupMember -Group Users -Member oriprobe -ErrorAction SilentlyContinue
+          "oriprobe groups: $((Get-LocalGroup | Where-Object { (Get-LocalGroupMember $_ -ErrorAction SilentlyContinue).Name -match 'oriprobe' }).Name -join ', ')"
+          $credential = New-Object System.Management.Automation.PSCredential("$env:COMPUTERNAME\oriprobe", $secure)
           $root = 'C:\oriprobe'
           New-Item -ItemType Directory -Force -Path $root | Out-Null
           icacls $root /grant 'Everyone:(OI)(CI)F' | Out-Null
@@ -64,8 +67,14 @@ jobs:
             New-Item -ItemType Directory -Force -Path (Join-Path $work 'repo') | Out-Null
             Invoke-WebRequest -Uri "https://codeload.github.com/OpenRouterIncubator/templates/tar.gz/$sha" -OutFile (Join-Path $work 'templates.tar.gz')
             icacls $work /grant 'Everyone:(OI)(CI)F' /T | Out-Null
-            $process = Start-Process -FilePath 'C:\Windows\System32\cmd.exe' -ArgumentList '/c', 'whoami > whoami.txt & C:\Windows\System32\tar.exe --extract --gzip --strip-components=1 --file templates.tar.gz --directory repo 2> tar-stderr.txt' -WorkingDirectory $work -Credential $credential -LoadUserProfile -Wait -PassThru
-            "$label $sha as $(Get-Content (Join-Path $work 'whoami.txt')) tar exit=$($process.ExitCode)"
+            try {
+              $process = Start-Process -FilePath 'C:\Windows\System32\cmd.exe' -ArgumentList '/c', 'whoami /groups > whoami.txt & C:\Windows\System32\tar.exe --extract --gzip --strip-components=1 --file templates.tar.gz --directory repo 2> tar-stderr.txt' -WorkingDirectory $work -Credential $credential -LoadUserProfile -Wait -PassThru
+            } catch {
+              "Start-Process failed: $($_.Exception.Message)"
+              exit 1
+            }
+            Get-Content (Join-Path $work 'whoami.txt') | Select-String 'Mandatory Label|Administrators'
+            "$label $sha tar exit=$($process.ExitCode)"
             Get-Content (Join-Path $work 'tar-stderr.txt') -ErrorAction SilentlyContinue
             $results[$label] = $process.ExitCode
           }
