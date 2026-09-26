@@ -25,5 +25,5 @@ It covers the workspace layout, contribution files, validation, and the PR flow.
   `package.json`, currently only `default/`) needs the `ori` CLI installed and
   `ori init .` run once in that directory before `typecheck`/`lint` will pass
   — `ori init .` materializes `.ori/sdk` and installs dependencies.
-- `main` requires PRs with **signed/Verified commits**, a green `verify` check,
+- `main` requires PRs with **signed/Verified commits**, green `lint`, `typecheck` and `test` checks,
   and **resolved conversations**.
