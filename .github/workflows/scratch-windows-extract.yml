@@ -1,0 +1,48 @@
+name: scratch-windows-extract
+
+on:
+  push:
+    branches: [scratch/ori-2471-windows-extract]
+
+permissions:
+  contents: read
+
+jobs:
+  extract:
+    name: extract old and new templates archives with Windows tar
+    runs-on: windows-latest
+    timeout-minutes: 10
+    env:
+      OLD_SHA: 883549a326aa93a5da3acfa4b3a2b379ed563fb1
+      NEW_SHA: 6ab48bcf4b2e44e94bc0513cccd9425ed7db5716
+    steps:
+      - name: Runner privileges
+        shell: pwsh
+        run: |
+          $principal = [Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()
+          "admin: $($principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator))"
+          $devMode = Get-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\AppModelUnlock' -Name AllowDevelopmentWithoutDevLicense -ErrorAction SilentlyContinue
+          "developer mode: $($devMode.AllowDevelopmentWithoutDevLicense)"
+          whoami /priv | Select-String SeCreateSymbolicLinkPrivilege
+          Get-Command tar -All | Format-Table -AutoSize Source
+          C:\Windows\System32\tar.exe --version
+
+      - name: Extract both archives
+        shell: pwsh
+        run: |
+          $results = @{}
+          foreach ($label in @('old', 'new')) {
+            $sha = if ($label -eq 'old') { $env:OLD_SHA } else { $env:NEW_SHA }
+            $work = Join-Path $env:RUNNER_TEMP $label
+            New-Item -ItemType Directory -Force -Path (Join-Path $work 'repo') | Out-Null
+            Invoke-WebRequest -Uri "https://codeload.github.com/OpenRouterIncubator/templates/tar.gz/$sha" -OutFile (Join-Path $work 'templates.tar.gz')
+            Push-Location $work
+            C:\Windows\System32\tar.exe --extract --gzip --strip-components=1 --file templates.tar.gz --directory repo
+            $code = $LASTEXITCODE
+            Pop-Location
+            $claude = Get-Item (Join-Path $work 'repo\CLAUDE.md') -ErrorAction SilentlyContinue
+            "$label $sha tar exit=$code CLAUDE.md linktype=$($claude.LinkType) length=$($claude.Length)"
+            $results[$label] = $code
+          }
+          $global:LASTEXITCODE = 0
+          if ($results['new'] -ne 0) { exit 1 }
