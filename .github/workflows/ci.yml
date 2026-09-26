@@ -27,6 +27,18 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      # `ori init` extracts this repo's tarball with the host tar, and Windows
+      # tar cannot create a symlink without admin rights or Developer Mode.
+      - name: Reject symlinks
+        run: |
+          set -euo pipefail
+          symlinks="$(git ls-files --stage | grep '^120000 ' | cut -f2 || true)"
+          if [ -n "$symlinks" ]; then
+            echo "::error::Symlinks break template extraction on Windows. Replace each with a regular file:"
+            printf '%s\n' "$symlinks"
+            exit 1
+          fi
+
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
         with:
