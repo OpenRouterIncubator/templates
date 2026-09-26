@@ -46,3 +46,28 @@ jobs:
           }
           $global:LASTEXITCODE = 0
           if ($results['new'] -ne 0) { exit 1 }
+
+      - name: Extract both archives as a standard user with Developer Mode off
+        shell: pwsh
+        run: |
+          Set-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\AppModelUnlock' -Name AllowDevelopmentWithoutDevLicense -Value 0
+          $password = 'P' + [guid]::NewGuid().ToString('N') + '!a1'
+          net user oriprobe $password /add | Out-Null
+          $credential = New-Object System.Management.Automation.PSCredential('oriprobe', (ConvertTo-SecureString $password -AsPlainText -Force))
+          $root = 'C:\oriprobe'
+          New-Item -ItemType Directory -Force -Path $root | Out-Null
+          icacls $root /grant 'Everyone:(OI)(CI)F' | Out-Null
+          $results = @{}
+          foreach ($label in @('old', 'new')) {
+            $sha = if ($label -eq 'old') { $env:OLD_SHA } else { $env:NEW_SHA }
+            $work = Join-Path $root $label
+            New-Item -ItemType Directory -Force -Path (Join-Path $work 'repo') | Out-Null
+            Invoke-WebRequest -Uri "https://codeload.github.com/OpenRouterIncubator/templates/tar.gz/$sha" -OutFile (Join-Path $work 'templates.tar.gz')
+            icacls $work /grant 'Everyone:(OI)(CI)F' /T | Out-Null
+            $process = Start-Process -FilePath 'C:\Windows\System32\cmd.exe' -ArgumentList '/c', 'whoami > whoami.txt & C:\Windows\System32\tar.exe --extract --gzip --strip-components=1 --file templates.tar.gz --directory repo 2> tar-stderr.txt' -WorkingDirectory $work -Credential $credential -LoadUserProfile -Wait -PassThru
+            "$label $sha as $(Get-Content (Join-Path $work 'whoami.txt')) tar exit=$($process.ExitCode)"
+            Get-Content (Join-Path $work 'tar-stderr.txt') -ErrorAction SilentlyContinue
+            $results[$label] = $process.ExitCode
+          }
+          $global:LASTEXITCODE = 0
+          if ($results['new'] -ne 0) { exit 1 }
