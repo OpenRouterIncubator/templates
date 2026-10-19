@@ -4,6 +4,7 @@
 // default surface `ori dev` / `ori tui` attaches to (the built-in stays
 // reachable via `ori tui --chat built-in-tui`). The Ink JSX lives in `app.tsx`.
 import { stdin } from "node:process";
+import { Effect } from "effect";
 import { render } from "ink";
 import { createElement } from "react";
 import { App, runPiped } from "./app.tsx";
@@ -11,24 +12,25 @@ import type { ChatRuntime } from "./view.ts";
 
 interface ChatContribution {
   readonly name: string;
-  readonly start: (chat: ChatRuntime) => Promise<void>;
-  readonly stop: () => Promise<void>;
+  readonly start: (chat: ChatRuntime) => Effect.Effect<void>;
+  readonly stop: () => Effect.Effect<void>;
 }
 
 let app: ReturnType<typeof render> | undefined;
 
 export const chat = {
   name: "tui",
-  async start(chatRuntime: ChatRuntime) {
-    if (stdin.isTTY) {
-      app = render(createElement(App, { chat: chatRuntime }));
-      await app.waitUntilExit();
-      return;
-    }
-    await runPiped(chatRuntime);
-  },
-  stop: () => {
-    app?.unmount();
-    return Promise.resolve();
-  },
+  start: (chatRuntime: ChatRuntime) =>
+    Effect.promise(async () => {
+      if (stdin.isTTY) {
+        app = render(createElement(App, { chat: chatRuntime }));
+        await app.waitUntilExit();
+        return;
+      }
+      await runPiped(chatRuntime);
+    }),
+  stop: () =>
+    Effect.sync(() => {
+      app?.unmount();
+    }),
 } satisfies ChatContribution;
