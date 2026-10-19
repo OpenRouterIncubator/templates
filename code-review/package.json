@@ -1,5 +1,6 @@
 {
   "dependencies": {
+    "effect": "4.0.0",
     "ink": "7.0.5",
     "react": "19.2.7"
   },
